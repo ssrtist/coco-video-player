@@ -110,7 +110,6 @@
                                  <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="10" r="7"/></svg>
                                  Record
                              </button>
-                             <button id="vocal-toggle-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">Muffle Vocals</button>
                         </div>
 
                         <div class="w-full md:w-auto">
@@ -162,7 +161,7 @@
                 { name: "Coco with Andrew 04", url: "videos/PXL_20250514_193032889.TS.mp4" },
             ],
             dancing: [
-                { name: "Walk at Home 01", url: "videos/Walking_Exercise_with_the_SUPER_Coaches.mp4" },
+                { name: "Walk at Home 01", url: "videos/Walking Exercise with the SUPER Coaches_720p.mp4" },
                 { name: "Walk at Home 02", url: "videos/Classic 2 Mile Workout_720p.mp4" },
                 { name: "Zumba Mini-Workout 01", url: "videos/Zumba 30-Minute Mini-Workout_720p.mp4" },
             ]
@@ -174,8 +173,7 @@
         let mediaRecorder;
         let audioChunks = [];
         let isRecording = false;
-        let audioContext, videoSourceNode, pannerNode;
-        let isVocalsMuffled = false;
+    let audioContext, videoSourceNode, pannerNode;
         let recordedAudioPlayer = null;
 
 
@@ -238,7 +236,6 @@
             player.pause();
             player.src = "";
             if (isRecording) stopRecording();
-            if (isVocalsMuffled) toggleVocals();
             showScreen('video-list');
         }
 
@@ -331,52 +328,7 @@
             }
         });
 
-        // --- Audio Features: Muffling & Recording ---
-        function toggleVocals() {
-            if (!audioContext) {
-                try {
-                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    const source = audioContext.createMediaElementSource(videoPlayer);
-                    
-                    // This is a simplified simulation of vocal removal.
-                    // Real vocal removal is much more complex. This technique attempts to
-                    // cancel out center-panned audio (where vocals often are) by splitting
-                    // stereo channels and inverting one. It works on some, but not all, stereo recordings.
-                    const splitter = audioContext.createChannelSplitter(2);
-                    const merger = audioContext.createChannelMerger(2);
-                    const gain = audioContext.createGain();
-                    gain.gain.value = -1; // Invert phase
-        
-                    source.connect(splitter);
-                    splitter.connect(merger, 0, 0); // Left to Left
-                    splitter.connect(gain, 1, 0);   // Right to Gain
-                    gain.connect(merger, 0, 1);     // Inverted Right to Left
-                    merger.connect(audioContext.destination);
-
-                } catch (e) {
-                    console.error("Web Audio API is not supported in this browser.", e);
-                    alert("Could not initialize audio effects.");
-                    return;
-                }
-            }
-
-            const vocalBtn = document.getElementById('vocal-toggle-btn');
-            if (isVocalsMuffled) {
-                audioContext.resume();
-                vocalBtn.textContent = 'Muffle Vocals';
-                vocalBtn.classList.replace('bg-green-600', 'bg-blue-600');
-                vocalBtn.classList.replace('hover:bg-green-700', 'hover:bg-blue-700');
-
-            } else {
-                audioContext.suspend();
-                vocalBtn.textContent = 'Restore Vocals';
-                vocalBtn.classList.replace('bg-blue-600', 'bg-green-600');
-                vocalBtn.classList.replace('hover:bg-blue-700', 'hover:bg-green-700');
-            }
-            isVocalsMuffled = !isVocalsMuffled;
-        }
-        
-        document.getElementById('vocal-toggle-btn').addEventListener('click', toggleVocals);
+    // --- Audio Features: Recording Only ---
         
         const recordBtn = document.getElementById('record-btn');
         recordBtn.addEventListener('click', () => {
