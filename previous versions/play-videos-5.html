@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multimedia App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .screen { display: none; }
+        .active-screen { display: block; }
+
+        /* Custom scrollbar for webkit browsers */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #2d3748;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4a5568;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #718096;
+        }
+
+        /* Custom progress bar style */
+        progress[value]::-webkit-progress-bar {
+            background-color: #4a5568;
+            border-radius: 0.5rem;
+        }
+        progress[value]::-webkit-progress-value {
+            background-color: #6366f1;
+            border-radius: 0.5rem;
+            transition: width 0.1s linear;
+        }
+        /* Increase progress bar height for better touch interaction */
+        #progress-bar {
+            height: 10px;
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        .video-container .video-controls {
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+        }
+        .video-container:hover .video-controls,
+        .video-container .video-controls.show-controls {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen">
+
+    <div class="container mx-auto p-4 max-w-4xl w-full">
+
+        <!-- Main Menu Screen -->
+        <div id="main-menu" class="screen active-screen text-center">
+            <h1 class="text-5xl font-bold mb-8 text-indigo-400">Coco's Videos</h1>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <button onclick="showVideoList('singing')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-6 px-4 rounded-lg text-2xl transition-transform transform hover:scale-105">
+                    🎤 Singing Videos
+                </button>
+                <button onclick="showVideoList('dancing')" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-6 px-4 rounded-lg text-2xl transition-transform transform hover:scale-105">
+                    💃 Dancing Videos
+                </button>
+                <button onclick="showRecordings()" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-6 px-4 rounded-lg text-2xl transition-transform transform hover:scale-105">
+                    🎧 Review Recordings
+                </button>
+            </div>
+        </div>
+
+        <!-- Video List Screen -->
+        <div id="video-list" class="screen relative">
+            <button onclick="showScreen('main-menu')" class="absolute top-0 left-0 bg-gray-800 bg-opacity-50 hover:bg-opacity-75 text-white p-3 rounded-full z-10 m-4">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+            </button>
+            <div class="text-center mb-6">
+                <h2 id="video-list-title" class="text-3xl font-bold text-indigo-400 pt-4"></h2>
+            </div>
+            <div id="video-items" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        </div>
+
+        <!-- Video Player Screen -->
+        <div id="player-screen" class="screen fixed inset-0 bg-black z-50">
+            <button onclick="goBackToSelection()" class="absolute top-4 left-4 bg-gray-800 bg-opacity-50 hover:bg-opacity-75 text-white p-3 rounded-full z-20">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+            </button>
+            <div class="video-container">
+                <video id="video-player" class="w-full h-full object-contain" loop ontimeupdate="updateProgress()"></video>
+                <div class="video-controls p-6">
+                    <div class="flex items-center gap-4 mb-2">
+                        <progress id="progress-bar" value="0" max="100" class="w-full h-2.5 rounded-lg cursor-pointer"></progress>
+                        <span id="time-display" class="text-sm text-gray-300 whitespace-nowrap">0:00 / 0:00</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                         <!-- Left Side Controls -->
+                        <div class="w-1/3">
+                            <button id="record-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="10" r="7"/></svg>
+                                Record
+                            </button>
+                        </div>
+                        <!-- Center Controls -->
+                        <div class="w-1/3 flex justify-center items-center gap-4">
+                            <button onclick="playPrevious()" class="text-white p-3 rounded-full hover:bg-white/10">
+                                <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 20 20"><path d="M4 5h3v10H4V5zm12 0v10l-9-5 9-5z"/></svg>
+                            </button>
+                            <button id="play-pause-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full focus:outline-none transform transition-transform hover:scale-110">
+                                <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20"><path id="play-icon" d="M4.018 15.132l11.964-6.646-11.964-6.646v13.292z"></path><path id="pause-icon" style="display:none;" d="M6 5h2v10H6V5zm6 0h2v10h-2V5z"></path></svg>
+                            </button>
+                            <button onclick="playNext()" class="text-white p-3 rounded-full hover:bg-white/10">
+                                <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 20 20"><path d="M13 5h3v10h-3V5zM4 5l9 5-9 5V5z"/></svg>
+                            </button>
+                        </div>
+                        <!-- Right Side Controls -->
+                        <div class="w-1/3 flex justify-end items-center gap-x-4">
+                            <div id="speed-controls" class="flex items-center gap-2">
+                                <button data-speed="0.5" class="speed-btn bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-3 rounded-lg text-sm">0.5x</button>
+                                <button data-speed="0.75" class="speed-btn bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-3 rounded-lg text-sm">0.75x</button>
+                                <button data-speed="1" class="speed-btn bg-indigo-600 text-white font-bold py-2 px-3 rounded-lg text-sm">1x</button>
+                           </div>
+                            <div>
+                                <label for="loop-options" class="sr-only">Loop Options</label>
+                                <select id="loop-options" class="bg-gray-700 text-white p-2 rounded-lg">
+                                    <option value="single">Loop This Video</option>
+                                    <option value="all-restart">Loop Playlist & Restart</option>
+                                    <option value="all-stop">Play Playlist & Stop</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Review Recordings Screen -->
+        <div id="review-screen" class="screen relative">
+            <button onclick="showScreen('main-menu')" class="absolute top-0 left-0 bg-gray-800 bg-opacity-50 hover:bg-opacity-75 text-white p-3 rounded-full z-10 m-4">
+                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+            </button>
+            <div class="text-center mb-6">
+                <h2 class="text-3xl font-bold text-indigo-400 pt-4">Your Recordings</h2>
+            </div>
+            <div id="recording-list" class="space-y-4">
+                <p class="text-gray-400">No recordings found. Try recording some audio over a video!</p>
+            </div>
+        </div>
+        
+        <!-- Review Player Screen -->
+        <div id="review-player-screen" class="screen fixed inset-0 bg-black z-50">
+            <button onclick="stopReviewAndGoBack()" class="absolute top-4 left-4 bg-gray-800 bg-opacity-50 hover:bg-opacity-75 text-white p-3 rounded-full z-20">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+            </button>
+             <div class="video-container">
+                <video id="review-video-player" class="w-full h-full object-contain"></video>
+                <div class="video-controls show-controls p-6 flex justify-center items-center">
+                     <h3 id="review-title" class="text-xl font-bold"></h3>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Database and State Management ---
+        let db;
+        const dbName = "multimediaAppDB";
+        const videoData = {
+            singing: [
+                { name: "Coco with Andrew 01", url: "videos/PXL_20250625_194342335.TS.mp4" },
+                { name: "Coco with Andrew 02", url: "videos/PXL_20250528_194505329.TS.mp4" },
+                { name: "Coco with Andrew 03", url: "videos/PXL_20250528_190856971.TS.mp4" },
+                { name: "Coco with Andrew 04", url: "videos/PXL_20250514_193032889.TS.mp4" },
+            ],
+            dancing: [
+                { name: "Walk at Home 01", url: "videos/Walking Exercise with the SUPER Coaches_720p.mp4" },
+                { name: "Walk at Home 02", url: "videos/Classic 2 Mile Workout_720p.mp4" },
+                { name: "Zumba Mini-Workout 01", url: "videos/Zumba 30-Minute Mini-Workout_720p.mp4" },
+            ]
+        };
+
+        let currentScreen = 'main-menu';
+        let currentVideoList = [];
+        let currentVideoIndex = 0;
+        let mediaRecorder;
+        let audioChunks = [];
+        let isRecording = false;
+        let recordedAudioPlayer = null;
+
+
+        // --- IndexedDB Initialization ---
+        const request = indexedDB.open(dbName, 1);
+        request.onerror = (event) => console.error("Database error:", event.target.errorCode);
+        request.onsuccess = (event) => {
+            db = event.target.result;
+            console.log("Database opened successfully.");
+        };
+        request.onupgradeneeded = (event) => {
+            let db = event.target.result;
+            let objectStore = db.createObjectStore("recordings", { keyPath: "id", autoIncrement: true });
+            objectStore.createIndex("videoName", "videoName", { unique: false });
+            objectStore.createIndex("videoSrc", "videoSrc", { unique: false });
+            objectStore.createIndex("audioBlob", "audioBlob", { unique: false });
+            objectStore.createIndex("timestamp", "timestamp", { unique: false });
+            console.log("Database setup complete.");
+        };
+
+        // --- Screen Navigation ---
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active-screen');
+            });
+            document.getElementById(screenId).classList.add('active-screen');
+            currentScreen = screenId;
+        }
+
+        function showVideoList(category) {
+            currentVideoList = videoData[category];
+            const title = category.charAt(0).toUpperCase() + category.slice(1) + " Videos";
+            document.getElementById('video-list-title').innerText = title;
+            const videoItemsContainer = document.getElementById('video-items');
+            videoItemsContainer.innerHTML = '';
+            currentVideoList.forEach((video, index) => {
+                const button = document.createElement('button');
+                button.className = "bg-gray-800 hover:bg-gray-700 p-4 rounded-lg text-left transition-colors";
+                button.innerHTML = `<h3 class="font-bold text-lg">${video.name}</h3>`;
+                button.onclick = () => playVideo(index);
+                videoItemsContainer.appendChild(button);
+            });
+            showScreen('video-list');
+        }
+
+        // --- Video Player Logic ---
+        const videoPlayer = document.getElementById('video-player');
+        const speedControls = document.getElementById('speed-controls');
+        const speedButtons = speedControls.querySelectorAll('.speed-btn');
+
+        function playVideo(index) {
+            currentVideoIndex = index;
+            const video = currentVideoList[currentVideoIndex];
+            videoPlayer.src = video.url;
+            
+            // Reset playback speed to 1x for new video
+            videoPlayer.playbackRate = 1.0;
+            speedButtons.forEach(btn => {
+                btn.classList.remove('bg-indigo-600');
+                btn.classList.add('bg-gray-700');
+                if (btn.dataset.speed === "1") {
+                    btn.classList.add('bg-indigo-600');
+                    btn.classList.remove('bg-gray-700');
+                }
+            });
+
+            videoPlayer.play();
+            updatePlayPauseIcon(false);
+            showScreen('player-screen');
+            document.getElementById('loop-options').value = 'single';
+        }
+        
+        function playNext() {
+            let nextIndex = currentVideoIndex + 1;
+            if (nextIndex >= currentVideoList.length) {
+                nextIndex = 0; // Loop to the start
+            }
+            playVideo(nextIndex);
+        }
+
+        function playPrevious() {
+            let prevIndex = currentVideoIndex - 1;
+            if (prevIndex < 0) {
+                prevIndex = currentVideoList.length - 1; // Loop to the end
+            }
+            playVideo(prevIndex);
+        }
+
+        function goBackToSelection() {
+            videoPlayer.pause();
+            videoPlayer.src = "";
+            if (isRecording) stopRecording();
+            showScreen('video-list');
+        }
+
+        const playPauseBtn = document.getElementById('play-pause-btn');
+        const playIcon = document.getElementById('play-icon');
+        const pauseIcon = document.getElementById('pause-icon');
+
+        function updatePlayPauseIcon(isPaused) {
+            playIcon.style.display = isPaused ? 'block' : 'none';
+            pauseIcon.style.display = isPaused ? 'none' : 'block';
+        }
+
+        playPauseBtn.addEventListener('click', () => {
+            if (videoPlayer.paused) {
+                videoPlayer.play();
+            } else {
+                videoPlayer.pause();
+            }
+        });
+        videoPlayer.addEventListener('play', () => updatePlayPauseIcon(false));
+        videoPlayer.addEventListener('pause', () => updatePlayPauseIcon(true));
+
+        // --- Playback Speed ---
+        speedControls.addEventListener('click', (e) => {
+            if (e.target.classList.contains('speed-btn')) {
+                const speed = parseFloat(e.target.dataset.speed);
+                videoPlayer.playbackRate = speed;
+                
+                speedButtons.forEach(btn => {
+                    btn.classList.remove('bg-indigo-600');
+                    btn.classList.add('bg-gray-700');
+                });
+                e.target.classList.remove('bg-gray-700');
+                e.target.classList.add('bg-indigo-600');
+            }
+        });
+
+        // --- Touch and Mouse Friendly Progress Bar & Time ---
+        const progressBar = document.getElementById('progress-bar');
+        const timeDisplay = document.getElementById('time-display');
+        let isDraggingProgress = false;
+
+        function updateProgress() {
+            if (isDraggingProgress) return; // Don't update if user is scrubbing
+            const duration = videoPlayer.duration;
+            if (duration && isFinite(duration)) {
+                const progress = (videoPlayer.currentTime / duration) * 100;
+                progressBar.value = progress;
+                
+                const formatTime = (time) => {
+                    const minutes = Math.floor(time / 60);
+                    const seconds = Math.floor(time % 60).toString().padStart(2, '0');
+                    return `${minutes}:${seconds}`;
+                }
+                timeDisplay.textContent = `${formatTime(videoPlayer.currentTime)} / ${formatTime(duration)}`;
+            } else {
+                progressBar.value = 0;
+                timeDisplay.textContent = `0:00 / 0:00`;
+            }
+        }
+        
+        function scrub(e) {
+            const clientX = e.clientX ?? e.touches?.[0]?.clientX;
+            if (clientX === undefined) return;
+
+            const rect = progressBar.getBoundingClientRect();
+            const percent = Math.min(Math.max(0, clientX - rect.left), rect.width) / rect.width;
+            
+            if (videoPlayer.duration && isFinite(videoPlayer.duration)) {
+                const newTime = percent * videoPlayer.duration;
+                videoPlayer.currentTime = newTime;
+                progressBar.value = percent * 100;
+                const formatTime = (time) => {
+                    const minutes = Math.floor(time / 60);
+                    const seconds = Math.floor(time % 60).toString().padStart(2, '0');
+                    return `${minutes}:${seconds}`;
+                }
+                timeDisplay.textContent = `${formatTime(newTime)} / ${formatTime(videoPlayer.duration)}`;
+            }
+        }
+
+        function onScrubMove(e) {
+            if (isDraggingProgress) {
+                if (e.cancelable) e.preventDefault(); // Prevent page scroll on touch
+                scrub(e);
+            }
+        }
+
+        function startScrubbing(e) {
+            isDraggingProgress = true;
+            scrub(e);
+        }
+
+        function stopScrubbing() {
+            isDraggingProgress = false;
+        }
+
+        // Mouse Events
+        progressBar.addEventListener('mousedown', startScrubbing);
+        document.addEventListener('mousemove', onScrubMove);
+        document.addEventListener('mouseup', stopScrubbing);
+        document.addEventListener('mouseleave', stopScrubbing); // Stop if mouse leaves window
+
+        // Touch Events
+        progressBar.addEventListener('touchstart', (e) => {
+             startScrubbing(e);
+        }, { passive: true });
+        document.addEventListener('touchmove', onScrubMove, { passive: false });
+        document.addEventListener('touchend', stopScrubbing);
+
+
+        // --- Loop Logic ---
+        document.getElementById('loop-options').addEventListener('change', (e) => {
+            videoPlayer.loop = e.target.value === 'single';
+        });
+
+        videoPlayer.addEventListener('ended', () => {
+            const loopOption = document.getElementById('loop-options').value;
+             if (loopOption === 'single') {
+                videoPlayer.play();
+                return;
+            }
+            
+            const isLastVideo = currentVideoIndex === currentVideoList.length - 1;
+
+            if (loopOption === 'all-restart') {
+                playNext();
+            } else if (loopOption === 'all-stop') {
+                if (!isLastVideo) {
+                    playNext();
+                } else {
+                    goBackToSelection();
+                }
+            }
+        });
+
+        // --- Audio Features: Recording Only ---
+        const recordBtn = document.getElementById('record-btn');
+        recordBtn.addEventListener('click', () => {
+            if (!isRecording) {
+                startRecording();
+            } else {
+                stopRecording();
+            }
+        });
+
+        async function startRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                isRecording = true;
+                audioChunks = [];
+                mediaRecorder = new MediaRecorder(stream);
+                mediaRecorder.ondataavailable = event => {
+                    audioChunks.push(event.data);
+                };
+                mediaRecorder.onstop = saveRecording;
+                mediaRecorder.start();
+                
+                recordBtn.classList.replace('bg-red-600', 'bg-yellow-500');
+                recordBtn.classList.replace('hover:bg-red-700', 'hover:bg-yellow-600');
+                recordBtn.innerHTML = `
+                    <svg class="w-5 h-5 animate-pulse" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="10" r="7"/></svg>
+                    Stop
+                `;
+            } catch (err) {
+                console.error("Error accessing microphone:", err);
+                alert("Could not access microphone. Please check permissions.");
+            }
+        }
+
+        function stopRecording() {
+            if (mediaRecorder) {
+                mediaRecorder.stop();
+                isRecording = false;
+                recordBtn.classList.replace('bg-yellow-500', 'bg-red-600');
+                recordBtn.classList.replace('hover:bg-yellow-600', 'hover:bg-red-700');
+                recordBtn.innerHTML = `
+                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="10" r="7"/></svg>
+                     Record
+                `;
+            }
+        }
+
+        function saveRecording() {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            const video = currentVideoList[currentVideoIndex];
+            const recordingData = {
+                videoName: video.name,
+                videoSrc: video.url,
+                audioBlob: audioBlob,
+                timestamp: new Date()
+            };
+
+            const transaction = db.transaction(["recordings"], "readwrite");
+            const objectStore = transaction.objectStore("recordings");
+            const request = objectStore.add(recordingData);
+
+            request.onsuccess = () => {
+                console.log("Recording saved to DB.");
+                alert('Recording saved!');
+            };
+            request.onerror = (event) => console.error("Error saving recording:", event.target.errorCode);
+        }
+
+        // --- Review Recordings Logic ---
+        function showRecordings() {
+            const transaction = db.transaction(["recordings"], "readonly");
+            const objectStore = transaction.objectStore("recordings");
+            const recordings = [];
+            
+            objectStore.openCursor().onsuccess = (event) => {
+                const cursor = event.target.result;
+                if (cursor) {
+                    recordings.push(cursor.value);
+                    cursor.continue();
+                } else {
+                    displayRecordings(recordings);
+                }
+            };
+            showScreen('review-screen');
+        }
+
+        function displayRecordings(recordings) {
+            const listContainer = document.getElementById('recording-list');
+            listContainer.innerHTML = '';
+
+            if (recordings.length === 0) {
+                 listContainer.innerHTML = `<p class="text-gray-400">No recordings found. Try recording some audio over a video!</p>`;
+                 return;
+            }
+
+            recordings.sort((a, b) => b.timestamp - a.timestamp);
+
+            recordings.forEach(rec => {
+                const div = document.createElement('div');
+                div.className = 'bg-gray-800 p-4 rounded-lg flex justify-between items-center';
+                div.innerHTML = `
+                    <div>
+                        <h4 class="font-bold text-xl">${rec.videoName}</h4>
+                        <p class="text-sm text-gray-400">Recorded on: ${rec.timestamp.toLocaleString()}</p>
+                    </div>
+                    <button class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg">Play Sync</button>
+                `;
+                div.querySelector('button').onclick = () => playRecording(rec);
+                listContainer.appendChild(div);
+            });
+        }
+        
+        function playRecording(recording) {
+            const reviewPlayer = document.getElementById('review-video-player');
+            document.getElementById('review-title').innerText = `Review: ${recording.videoName}`;
+            
+            reviewPlayer.src = recording.videoSrc;
+            
+            const audioURL = URL.createObjectURL(recording.audioBlob);
+            recordedAudioPlayer = new Audio(audioURL);
+
+            let playPromises = [reviewPlayer.play(), recordedAudioPlayer.play()];
+
+            Promise.all(playPromises).catch(error => {
+                console.error("Playback failed", error);
+            });
+            
+            showScreen('review-player-screen');
+        }
+        
+        function stopReviewAndGoBack() {
+             const reviewPlayer = document.getElementById('review-video-player');
+             reviewPlayer.pause();
+             reviewPlayer.src = "";
+             if (recordedAudioPlayer) {
+                 recordedAudioPlayer.pause();
+                 recordedAudioPlayer = null;
+             }
+             showRecordings();
+        }
+
+    </script>
+</body>
+</html>
+
