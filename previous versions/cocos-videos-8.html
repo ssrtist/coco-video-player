@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Coco's Videos</title>
+    <title>Multimedia App</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -66,9 +66,17 @@
         #progress-bubble {
             transition: left 0.1s linear;
         }
+        /* No hover effect for non-active speed buttons */
+        .speed-btn.bg-gray-700:hover {
+            background-color: #4a5568; /* Same as the default gray */
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-white flex items-center justify-center min-h-screen">
+
+    <button id="back-to-menu-btn" onclick="showScreen('main-menu')" class="hidden fixed top-4 left-4 bg-gray-800 bg-opacity-50 hover:bg-opacity-75 text-white p-3 rounded-full z-30">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+    </button>
 
     <div class="container mx-auto p-4 max-w-4xl w-full">
 
@@ -76,17 +84,14 @@
         <div id="main-menu" class="screen active-screen text-center">
             <h1 class="text-5xl font-bold mb-8 text-indigo-400">Coco's Videos</h1>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <button onclick="showVideoList('andrew')" class="bg-yellow-700 hover:bg-yellow-600 text-white font-bold py-6 px-4 rounded-lg text-2xl transition-transform transform hover:scale-105">
-                    👨🏻‍💼 Andrew
+                <button onclick="showVideoList('singing')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-6 px-4 rounded-lg text-2xl transition-transform transform hover:scale-105">
+                    🎤 Singing Videos
                 </button>
-                <button onclick="showVideoList('singing')" class="bg-indigo-700 hover:bg-indigo-600 text-white font-bold py-6 px-4 rounded-lg text-2xl transition-transform transform hover:scale-105">
-                    🎤 Singing
+                <button onclick="showVideoList('dancing')" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-6 px-4 rounded-lg text-2xl transition-transform transform hover:scale-105">
+                    💃 Dancing Videos
                 </button>
-                <button onclick="showVideoList('dancing')" class="bg-teal-700 hover:bg-teal-600 text-white font-bold py-6 px-4 rounded-lg text-2xl transition-transform transform hover:scale-105">
-                    💃 Dancing
-                </button>
-                 <button onclick="showVideoList('youtube')" class="bg-red-700 hover:bg-red-600 text-white font-bold py-6 px-4 rounded-lg text-2xl transition-transform transform hover:scale-105">
-                    📺 YouTube
+                 <button onclick="showVideoList('youtube')" class="bg-red-600 hover:bg-red-700 text-white font-bold py-6 px-4 rounded-lg text-2xl transition-transform transform hover:scale-105">
+                    📺 YouTube Videos
                 </button>
                 <button onclick="showRecordings()" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-6 px-4 rounded-lg text-2xl transition-transform transform hover:scale-105 col-span-1 md:col-span-3">
                     🎧 Review Recordings
@@ -96,9 +101,6 @@
 
         <!-- Video List Screen -->
         <div id="video-list" class="screen">
-            <button onclick="showScreen('main-menu')" class="absolute top-3 left-1 bg-red-700 hover:bg-red-400 text-white p-3 rounded-full z-10 m-4">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-            </button>
             <div class="text-center mb-6 flex justify-center items-center relative">
                 <h2 id="video-list-title" class="text-3xl font-bold text-indigo-400 pt-4"></h2>
                  <button id="add-youtube-btn" onclick="openAddVideoModal()" class="hidden absolute right-0 top-1/2 -translate-y-1/2 mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg">
@@ -110,7 +112,7 @@
 
         <!-- Video Player Screen -->
         <div id="player-screen" class="screen fixed inset-0 bg-black z-50">
-            <button onclick="goBackToSelection()" class="absolute top-7 left-5 bg-red-700 hover:bg-red-400 text-white p-3 rounded-full z-20">
+            <button onclick="goBackToSelection()" class="absolute top-4 left-4 bg-gray-800 bg-opacity-50 hover:bg-opacity-75 text-white p-3 rounded-full z-20">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
             </button>
             <div class="video-container">
@@ -149,7 +151,7 @@
                             <div id="speed-controls" class="flex items-center gap-2">
                                 <button data-speed="0.5" class="speed-btn bg-gray-700 text-white font-bold py-2 px-3 rounded-lg text-sm">0.5x</button>
                                 <button data-speed="0.75" class="speed-btn bg-gray-700 text-white font-bold py-2 px-3 rounded-lg text-sm">0.75x</button>
-                                <button data-speed="1" class="speed-btn bg-indigo-600 text-white font-bold py-2 px-3 rounded-lg text-sm">1x</button>
+                                <button data-speed="1" class="speed-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-3 rounded-lg text-sm">1x</button>
                            </div>
                             <div>
                                 <label for="loop-options" class="sr-only">Loop Options</label>
@@ -166,10 +168,7 @@
         </div>
 
         <!-- Review Recordings Screen -->
-        <div id="review-screen" class="screen relative">
-            <button onclick="showScreen('main-menu')" class="absolute top-0 left-0 bg-gray-800 bg-opacity-50 hover:bg-opacity-75 text-white p-3 rounded-full z-10 m-4">
-                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-            </button>
+        <div id="review-screen" class="screen">
             <div class="text-center mb-6">
                 <h2 class="text-3xl font-bold text-indigo-400 pt-4">Your Recordings</h2>
             </div>
@@ -219,24 +218,21 @@
         let db;
         const dbName = "multimediaAppDB";
         const videoData = {
-            andrew: [
-                { name: "Brave", url: "videos/PXL_20250625_194342335.TS.mp4" },
-                { name: "True Colors", url: "videos/PXL_20250528_194505329.TS.mp4" },
-                { name: "My Bonnie Over the Ocean", url: "videos/PXL_20250528_190856971.TS.mp4" },
-                { name: "Let It Be", url: "videos/PXL_20250514_193032889.TS.mp4" },
-            ],
             singing: [
-                { name: "My Bonnie Lies Over The Ocean", url: "videos/My Bonnie Lies Over The Ocean_1080p.mp4" },
-                { name: "I Can See Clearly Now", url: "videos/I Can See Clearly Now_720p.mp4" },
-                { name: "Golden Girls", url: "videos/Golden Girls_720p.mp4" },
+                { name: "Coco with Andrew 01", url: "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" },
+                { name: "Coco with Andrew 02", url: "https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4" },
+                { name: "Coco with Andrew 03", url: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4" },
+                { name: "Coco with Andrew 04", url: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4" },
             ],
             dancing: [
-                { name: "Walking Exercise", url: "videos/Walking Exercise with the SUPER Coaches_720p.mp4" },
-                { name: "Classic 2 Mile", url: "videos/Classic 2 Mile Workout_720p.mp4" },
-                { name: "Zumba Mini-Workout 01", url: "videos/Zumba 30-Minute Mini-Workout_720p.mp4" },
+                { name: "Walk at Home 01", url: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4" },
+                { name: "Walk at Home 02", url: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4" },
+                { name: "Zumba Mini-Workout 01", url: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4" },
             ],
             youtube: [
-                { name: "BEAUTIFUL BACK AND POSTURE", url: "https://www.youtube.com/embed/5mOpoYnXxpE?si=wTCg5rS7esbxotu1" },
+                { name: "Relaxing Jazz Music", url: "https://www.youtube.com/embed/neV3a-_Go-k" },
+                { name: "Lofi Hip Hop Radio", url: "https://www.youtube.com/embed/jfKfPfyJRdk" },
+                { name: "Classical Music for Studying", url: "https://www.youtube.com/embed/PvorM2B6P1A" },
             ]
         };
 
@@ -276,6 +272,13 @@
             });
             document.getElementById(screenId).classList.add('active-screen');
             currentScreen = screenId;
+
+            const backToMenuBtn = document.getElementById('back-to-menu-btn');
+            if (screenId === 'video-list' || screenId === 'review-screen') {
+                backToMenuBtn.classList.remove('hidden');
+            } else {
+                backToMenuBtn.classList.add('hidden');
+            }
         }
 
         function showVideoList(category) {
@@ -658,7 +661,7 @@
                 listContainer.appendChild(div);
             });
         }
-        
+
         function deleteRecording(id) {
             if (!db) {
                 alert("Database not ready.");
