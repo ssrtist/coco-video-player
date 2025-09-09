@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Coco's Videos</title>
+    <title>Coco's Video App</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -82,10 +82,7 @@
                 <button onclick="showVideoList('dancing')" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-6 px-4 rounded-lg text-2xl transition-transform transform hover:scale-105">
                     💃 Dancing Videos
                 </button>
-                 <button onclick="showVideoList('youtube')" class="bg-red-600 hover:bg-red-700 text-white font-bold py-6 px-4 rounded-lg text-2xl transition-transform transform hover:scale-105">
-                    📺 YouTube Videos
-                </button>
-                <button onclick="showRecordings()" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-6 px-4 rounded-lg text-2xl transition-transform transform hover:scale-105 col-span-1 md:col-span-3">
+                <button onclick="showRecordings()" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-6 px-4 rounded-lg text-2xl transition-transform transform hover:scale-105">
                     🎧 Review Recordings
                 </button>
             </div>
@@ -96,11 +93,8 @@
             <button onclick="showScreen('main-menu')" class="absolute top-0 left-0 bg-gray-800 bg-opacity-50 hover:bg-opacity-75 text-white p-3 rounded-full z-10 m-4">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
             </button>
-            <div class="text-center mb-6 flex justify-center items-center relative">
+            <div class="text-center mb-6">
                 <h2 id="video-list-title" class="text-3xl font-bold text-indigo-400 pt-4"></h2>
-                 <button id="add-youtube-btn" onclick="openAddVideoModal()" class="hidden absolute right-0 top-1/2 -translate-y-1/2 mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg">
-                    Add Video
-                </button>
             </div>
             <div id="video-items" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
         </div>
@@ -112,8 +106,7 @@
             </button>
             <div class="video-container">
                 <video id="video-player" class="w-full h-full object-contain" loop ontimeupdate="updateProgress()"></video>
-                <iframe id="youtube-player" class="w-full h-full" style="display: none;" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-                <div id="video-controls" class="video-controls p-6">
+                <div class="video-controls p-6">
                     <div class="flex items-center gap-4 mb-2">
                         <div id="progress-container" class="relative w-full flex items-center">
                             <progress id="progress-bar" value="0" max="100" class="w-full h-2.5 rounded-lg cursor-pointer"></progress>
@@ -188,27 +181,6 @@
             </div>
         </div>
 
-        <!-- Add YouTube Video Modal -->
-        <div id="add-video-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-            <div class="bg-gray-800 p-8 rounded-lg shadow-xl w-full max-w-md">
-                <h3 class="text-2xl font-bold mb-6 text-white">Add YouTube Video</h3>
-                <form id="add-video-form">
-                    <div class="mb-4">
-                        <label for="video-name" class="block text-gray-300 mb-2">Video Name</label>
-                        <input type="text" id="video-name" class="w-full bg-gray-700 text-white p-2 rounded-lg border border-gray-600 focus:outline-none focus:border-indigo-500" required>
-                    </div>
-                    <div class="mb-6">
-                        <label for="video-url" class="block text-gray-300 mb-2">YouTube URL</label>
-                        <input type="url" id="video-url" class="w-full bg-gray-700 text-white p-2 rounded-lg border border-gray-600 focus:outline-none focus:border-indigo-500" placeholder="https://www.youtube.com/watch?v=..." required>
-                    </div>
-                    <div class="flex justify-end gap-4">
-                        <button type="button" onclick="closeAddVideoModal()" class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg">Cancel</button>
-                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg">Save Video</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
     </div>
 
     <script>
@@ -221,16 +193,11 @@
                 { name: "Coco with Andrew 02", url: "videos/PXL_20250528_194505329.TS.mp4" },
                 { name: "Coco with Andrew 03", url: "videos/PXL_20250528_190856971.TS.mp4" },
                 { name: "Coco with Andrew 04", url: "videos/PXL_20250514_193032889.TS.mp4" },
-                { name: "I Can See Clearly Now", url: "videos/I Can See Clearly Now_720p.mp4" },
-                { name: "Golden Girls", url: "videos/Golden Girls_720p.mp4" },
             ],
             dancing: [
                 { name: "Walk at Home 01", url: "videos/Walking Exercise with the SUPER Coaches_720p.mp4" },
                 { name: "Walk at Home 02", url: "videos/Classic 2 Mile Workout_720p.mp4" },
                 { name: "Zumba Mini-Workout 01", url: "videos/Zumba 30-Minute Mini-Workout_720p.mp4" },
-            ],
-            youtube: [
-                { name: "BEAUTIFUL BACK AND POSTURE", url: "https://www.youtube.com/embed/5mOpoYnXxpE?si=wTCg5rS7esbxotu1" },
             ]
         };
 
@@ -242,26 +209,23 @@
         let isRecording = false;
         let recordedAudioPlayer = null;
 
-        // --- App Initialization ---
-        document.addEventListener('DOMContentLoaded', () => {
-            loadYoutubeList();
-            const request = indexedDB.open(dbName, 1);
-            request.onerror = (event) => console.error("Database error:", event.target.errorCode);
-            request.onsuccess = (event) => {
-                db = event.target.result;
-                console.log("Database opened successfully.");
-            };
-            request.onupgradeneeded = (event) => {
-                let db = event.target.result;
-                let objectStore = db.createObjectStore("recordings", { keyPath: "id", autoIncrement: true });
-                objectStore.createIndex("videoName", "videoName", { unique: false });
-                objectStore.createIndex("videoSrc", "videoSrc", { unique: false });
-                objectStore.createIndex("audioBlob", "audioBlob", { unique: false });
-                objectStore.createIndex("timestamp", "timestamp", { unique: false });
-                console.log("Database setup complete.");
-            };
-            document.getElementById('add-video-form').addEventListener('submit', handleAddVideoSubmit);
-        });
+
+        // --- IndexedDB Initialization ---
+        const request = indexedDB.open(dbName, 1);
+        request.onerror = (event) => console.error("Database error:", event.target.errorCode);
+        request.onsuccess = (event) => {
+            db = event.target.result;
+            console.log("Database opened successfully.");
+        };
+        request.onupgradeneeded = (event) => {
+            let db = event.target.result;
+            let objectStore = db.createObjectStore("recordings", { keyPath: "id", autoIncrement: true });
+            objectStore.createIndex("videoName", "videoName", { unique: false });
+            objectStore.createIndex("videoSrc", "videoSrc", { unique: false });
+            objectStore.createIndex("audioBlob", "audioBlob", { unique: false });
+            objectStore.createIndex("timestamp", "timestamp", { unique: false });
+            console.log("Database setup complete.");
+        };
 
         // --- Screen Navigation ---
         function showScreen(screenId) {
@@ -276,14 +240,6 @@
             currentVideoList = videoData[category];
             const title = category.charAt(0).toUpperCase() + category.slice(1) + " Videos";
             document.getElementById('video-list-title').innerText = title;
-
-            const addBtn = document.getElementById('add-youtube-btn');
-            if (category === 'youtube') {
-                addBtn.classList.remove('hidden');
-            } else {
-                addBtn.classList.add('hidden');
-            }
-
             const videoItemsContainer = document.getElementById('video-items');
             videoItemsContainer.innerHTML = '';
             currentVideoList.forEach((video, index) => {
@@ -298,41 +254,27 @@
 
         // --- Video Player Logic ---
         const videoPlayer = document.getElementById('video-player');
-        const youtubePlayer = document.getElementById('youtube-player');
-        const videoControls = document.getElementById('video-controls');
         const speedControls = document.getElementById('speed-controls');
         const speedButtons = speedControls.querySelectorAll('.speed-btn');
 
         function playVideo(index) {
             currentVideoIndex = index;
             const video = currentVideoList[currentVideoIndex];
-            const isYouTube = video.url.includes('youtube.com');
+            videoPlayer.src = video.url;
+            
+            // Reset playback speed to 1x for new video
+            videoPlayer.playbackRate = 1.0;
+            speedButtons.forEach(btn => {
+                btn.classList.remove('bg-indigo-600');
+                btn.classList.add('bg-gray-700');
+                if (btn.dataset.speed === "1") {
+                    btn.classList.add('bg-indigo-600');
+                    btn.classList.remove('bg-gray-700');
+                }
+            });
 
-            if (isYouTube) {
-                videoPlayer.style.display = 'none';
-                videoControls.style.display = 'none';
-                youtubePlayer.src = video.url + "?autoplay=1&rel=0";
-                youtubePlayer.style.display = 'block';
-            } else {
-                youtubePlayer.style.display = 'none';
-                youtubePlayer.src = ""; // Stop YouTube video
-                videoPlayer.style.display = 'block';
-                videoControls.style.display = ''; // Use default CSS behavior
-                
-                videoPlayer.playbackRate = 1.0;
-                speedButtons.forEach(btn => {
-                    btn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
-                    btn.classList.add('bg-gray-700');
-                    if (btn.dataset.speed === "1") {
-                        btn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
-                        btn.classList.remove('bg-gray-700');
-                    }
-                });
-
-                videoPlayer.src = video.url;
-                videoPlayer.play();
-                updatePlayPauseIcon(false);
-            }
+            videoPlayer.play();
+            updatePlayPauseIcon(false);
             showScreen('player-screen');
             document.getElementById('loop-options').value = 'single';
         }
@@ -356,9 +298,6 @@
         function goBackToSelection() {
             videoPlayer.pause();
             videoPlayer.src = "";
-            youtubePlayer.src = "";
-            youtubePlayer.style.display = 'none';
-            videoPlayer.style.display = 'block';
             if (isRecording) stopRecording();
             showScreen('video-list');
         }
@@ -389,11 +328,11 @@
                 videoPlayer.playbackRate = speed;
                 
                 speedButtons.forEach(btn => {
-                    btn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+                    btn.classList.remove('bg-indigo-600');
                     btn.classList.add('bg-gray-700');
                 });
                 e.target.classList.remove('bg-gray-700');
-                e.target.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+                e.target.classList.add('bg-indigo-600');
             }
         });
 
@@ -404,7 +343,7 @@
         let isDraggingProgress = false;
 
         function updateProgress() {
-            if (isDraggingProgress) return;
+            if (isDraggingProgress) return; // Don't update if user is scrubbing
             const duration = videoPlayer.duration;
             if (duration && isFinite(duration)) {
                 const progress = (videoPlayer.currentTime / duration) * 100;
@@ -425,6 +364,7 @@
         }
         
         function scrub(e) {
+            // Use touch event clientX if available, otherwise use mouse event clientX
             const clientX = e.clientX ?? e.touches?.[0]?.clientX;
             if (clientX === undefined) return;
 
@@ -448,7 +388,7 @@
 
         function onScrubMove(e) {
             if (isDraggingProgress) {
-                if (e.cancelable) e.preventDefault();
+                if (e.cancelable) e.preventDefault(); // Prevent page scroll on touch
                 scrub(e);
             }
         }
@@ -462,12 +402,14 @@
             isDraggingProgress = false;
         }
 
+        // Mouse Events for Progress Bar
         const progressContainer = document.getElementById('progress-container');
         progressContainer.addEventListener('mousedown', startScrubbing);
         document.addEventListener('mousemove', onScrubMove);
         document.addEventListener('mouseup', stopScrubbing);
-        document.addEventListener('mouseleave', stopScrubbing);
+        document.addEventListener('mouseleave', stopScrubbing); // Stop if mouse leaves window
 
+        // Touch Events for Progress Bar
         progressContainer.addEventListener('touchstart', startScrubbing, { passive: true });
         document.addEventListener('touchmove', onScrubMove, { passive: false });
         document.addEventListener('touchend', stopScrubbing);
@@ -475,12 +417,15 @@
 
         // --- Loop Logic ---
         document.getElementById('loop-options').addEventListener('change', (e) => {
-            videoPlayer.loop = e.target.value === 'single';
+            const isLooping = e.target.value === 'single';
+            videoPlayer.loop = isLooping;
         });
 
         videoPlayer.addEventListener('ended', () => {
             const loopOption = document.getElementById('loop-options').value;
-             if (videoPlayer.loop) return;
+             if (videoPlayer.loop) { // This handles 'single'
+                return;
+            }
             
             const isLastVideo = currentVideoIndex === currentVideoList.length - 1;
 
@@ -495,60 +440,14 @@
             }
         });
 
-        // --- Add YouTube Video Logic ---
-        const addVideoModal = document.getElementById('add-video-modal');
-        function openAddVideoModal() {
-            addVideoModal.classList.remove('hidden');
-        }
-        function closeAddVideoModal() {
-            addVideoModal.classList.add('hidden');
-            document.getElementById('add-video-form').reset();
-        }
-
-        function handleAddVideoSubmit(event) {
-            event.preventDefault();
-            const videoName = document.getElementById('video-name').value;
-            const videoUrl = document.getElementById('video-url').value;
-
-            const videoId = extractYouTubeID(videoUrl);
-            if (!videoId) {
-                alert("Invalid YouTube URL. Please use a valid 'watch' or 'youtu.be' link.");
-                return;
-            }
-
-            const newVideo = {
-                name: videoName,
-                url: `https://www.youtube.com/embed/${videoId}`
-            };
-
-            videoData.youtube.push(newVideo);
-            saveYoutubeList();
-            showVideoList('youtube');
-            closeAddVideoModal();
-        }
-
-        function extractYouTubeID(url) {
-            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-            const match = url.match(regExp);
-            return (match && match[2].length === 11) ? match[2] : null;
-        }
-
-        function saveYoutubeList() {
-            localStorage.setItem('customYoutubeVideos', JSON.stringify(videoData.youtube));
-        }
-
-        function loadYoutubeList() {
-            const savedVideos = localStorage.getItem('customYoutubeVideos');
-            if (savedVideos) {
-                videoData.youtube = JSON.parse(savedVideos);
-            }
-        }
-
-        // --- Audio Recording Logic ---
+        // --- Audio Features: Recording Only ---
         const recordBtn = document.getElementById('record-btn');
         recordBtn.addEventListener('click', () => {
-            if (!isRecording) startRecording();
-            else stopRecording();
+            if (!isRecording) {
+                startRecording();
+            } else {
+                stopRecording();
+            }
         });
 
         async function startRecording() {
@@ -557,13 +456,18 @@
                 isRecording = true;
                 audioChunks = [];
                 mediaRecorder = new MediaRecorder(stream);
-                mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
+                mediaRecorder.ondataavailable = event => {
+                    audioChunks.push(event.data);
+                };
                 mediaRecorder.onstop = saveRecording;
                 mediaRecorder.start();
                 
                 recordBtn.classList.replace('bg-red-600', 'bg-yellow-500');
                 recordBtn.classList.replace('hover:bg-red-700', 'hover:bg-yellow-600');
-                recordBtn.innerHTML = `<svg class="w-5 h-5 animate-pulse" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="10" r="7"/></svg>Stop`;
+                recordBtn.innerHTML = `
+                    <svg class="w-5 h-5 animate-pulse" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="10" r="7"/></svg>
+                    Stop
+                `;
             } catch (err) {
                 console.error("Error accessing microphone:", err);
                 alert("Could not access microphone. Please check permissions.");
@@ -576,7 +480,10 @@
                 isRecording = false;
                 recordBtn.classList.replace('bg-yellow-500', 'bg-red-600');
                 recordBtn.classList.replace('hover:bg-yellow-600', 'hover:bg-red-700');
-                recordBtn.innerHTML = `<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="10" r="7"/></svg>Record`;
+                recordBtn.innerHTML = `
+                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="10" r="7"/></svg>
+                     Record
+                `;
             }
         }
 
@@ -603,10 +510,6 @@
 
         // --- Review Recordings Logic ---
         function showRecordings() {
-            if (!db) {
-                alert("Database not ready yet. Please wait a moment.");
-                return;
-            }
             const transaction = db.transaction(["recordings"], "readonly");
             const objectStore = transaction.objectStore("recordings");
             const recordings = [];
