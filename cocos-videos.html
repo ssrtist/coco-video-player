@@ -711,9 +711,9 @@
         // --- Keyboard Hotkeys for Player ---
         document.addEventListener('keydown', (event) => {
             // Only apply hotkeys when the video player is the active screen
-            if (currentScreen !== 'player-screen') {
-                return;
-            }
+            // if (currentScreen !== 'player-screen') {
+            //     return;
+            // }
 
             // Hotkey "Space" for play/pause toggle for local videos
             if (event.code === 'Space' && videoPlayer.style.display !== 'none') {
