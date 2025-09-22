@@ -49,6 +49,28 @@
             position: relative;
             width: 100%;
             height: 100%;
+            display: flex;
+            flex-direction: row;
+        }
+        .lyrics-panel {
+            width: 350px;
+            min-width: 200px;
+            max-width: 400px;
+            background: rgba(30, 41, 59, 0.95);
+            color: #fff;
+            padding: 1.5rem 1rem;
+            border-radius: 0.75rem;
+            margin-left: 1.5rem;
+            font-size: 1.1rem;
+            overflow-y: auto;
+            box-shadow: 0 0 16px 0 #0004;
+            white-space: pre-line;
+            display: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
         }
         .video-container .video-controls {
             opacity: 0;
@@ -110,10 +132,11 @@
             <button onclick="goBackToSelection()" class="absolute top-7 left-5 bg-red-700 hover:bg-red-400 text-white p-3 rounded-full z-20">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
             </button>
-            <div class="video-container">
-                <video id="video-player" class="w-full h-full object-contain" loop ontimeupdate="updateProgress()"></video>
-                <iframe id="youtube-player" class="w-full h-full" style="display: none;" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-                <div id="video-controls" class="video-controls p-6">
+                        <div class="video-container">
+                                <div style="flex:1; min-width:0;">
+                                    <video id="video-player" class="w-full h-full object-contain" loop ontimeupdate="updateProgress()"></video>
+                                    <iframe id="youtube-player" class="w-full h-full" style="display: none;" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                                    <div id="video-controls" class="video-controls p-6">
                     <div class="flex items-center gap-4 mb-2">
                         <div id="progress-container" class="relative w-full flex items-center">
                             <progress id="progress-bar" value="0" max="100" class="w-full h-2.5 rounded-lg cursor-pointer"></progress>
@@ -155,7 +178,9 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                                    </div>
+                                </div>
+                                <div id="lyrics-panel" class="lyrics-panel"></div>
             </div>
         </div>
 
@@ -206,18 +231,24 @@
     </div>
 
     <script>
-        // --- Database and State Management ---
+        // --- Lyrics Dictionary (from videos.conf) ---
+        const lyrics = {
+            "Brave": `Or be the backlash of somebody's lack of love\nOr you can start speaking up\nNothing's gonna hurt you the way that words do\nWhen they settle 'neath your skin\nKept on the inside and no sunlight\nSometimes a shadow wins\nBut I wonder what would happen if you\nSay what you wanna say\nAnd let the words fall out\nHonestly I wanna see you be brave\nWith what you want to say\nAnd let the words fall out\nHonestly I wanna see you be brave\nI just wanna see you\nI just wanna see you\nI just wanna see you\nI wanna see you be brave\n`,
+            "True Colors": `Can't remember when\nI last saw you laughing\nIf this world makes you crazy\nAnd you've taken all you can bear\nYou call me up\nBecause you know I'll be there\nAnd I'll see your true colors\nShining through\nI see your true colors\nAnd that's why I love you\nSo don't be afraid to let them show\nYour true colors\nYour true colors\nAre beautiful like a rainbow\n`,
+            "My Bonnie": `1, 2, 3, 4, 5\n... the sea\nMy Bonnie lies over the ocean\nOh bring back my Bonnie to me\nBring back, bring back\nOh bring back my Bonnie to me, to me\nBring back, bring back\nOh bring back my Bonnie to me\n`,
+            "Let It Be": `... to me\nSpeaking words of wisdom, let it be\nAnd in my hour of darkness she is standing right in front of me\nSpeaking words of wisdom, let it be\nLet it be, let it be, let it be, let it be\nWhisper words of wisdom, let it be\nAnd when the broken hearted people living in the world agree\nThere will be an answer, let it be\n`
+        };
         let db;
         const dbName = "multimediaAppDB";
         const videoData = {
             andrew: [
                 { name: "Brave", url: "videos/PXL_20250625_194342335.TS.mp4" },
                 { name: "True Colors", url: "videos/PXL_20250528_194505329.TS.mp4" },
-                { name: "My Bonnie Over the Ocean", url: "videos/PXL_20250528_190856971.TS.mp4" },
+                { name: "My Bonnie", url: "videos/PXL_20250528_190856971.TS.mp4" },
                 { name: "Let It Be", url: "videos/PXL_20250514_193032889.TS.mp4" },
             ],
             singing: [
-                { name: "My Bonnie Lies Over The Ocean", url: "videos/My Bonnie Lies Over The Ocean_1080p.mp4" },
+                { name: "Lies Over The Ocean", url: "videos/My Bonnie Lies Over The Ocean_1080p.mp4" },
                 { name: "I Can See Clearly Now", url: "videos/I Can See Clearly Now_720p.mp4" },
                 { name: "Golden Girls", url: "videos/Golden Girls_720p.mp4" },
             ],
@@ -301,9 +332,24 @@
         const speedButtons = speedControls.querySelectorAll('.speed-btn');
 
         function playVideo(index) {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            }
             currentVideoIndex = index;
             const video = currentVideoList[currentVideoIndex];
             const isYouTube = video.url.includes('youtube.com');
+            const lyricsPanel = document.getElementById('lyrics-panel');
+
+            // Show lyrics if available for this video
+            let lyricText = lyrics[video.name] || lyrics[video.name?.trim()] || '';
+            if (lyricText) {
+                lyricsPanel.textContent = '';
+                lyricsPanel.style.display = 'block';
+                lyricsPanel.innerText = lyricText;
+            } else {
+                lyricsPanel.textContent = '';
+                lyricsPanel.style.display = 'none';
+            }
 
             if (isYouTube) {
                 videoPlayer.style.display = 'none';
@@ -314,8 +360,7 @@
                 youtubePlayer.style.display = 'none';
                 youtubePlayer.src = ""; // Stop YouTube video
                 videoPlayer.style.display = 'block';
-                videoControls.style.display = ''; // Use default CSS behavior
-                
+                videoControls.style.display = '';
                 videoPlayer.playbackRate = 1.0;
                 speedButtons.forEach(btn => {
                     btn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
@@ -325,7 +370,6 @@
                         btn.classList.remove('bg-gray-700');
                     }
                 });
-
                 videoPlayer.src = video.url;
                 videoPlayer.play();
                 updatePlayPauseIcon(false);
@@ -351,6 +395,9 @@
         }
 
         function goBackToSelection() {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
             videoPlayer.pause();
             videoPlayer.src = "";
             youtubePlayer.src = "";
@@ -699,21 +746,12 @@
              showRecordings();
         }
         
-        // --- Start in Full Screen on first user interaction ---
-        document.body.addEventListener('click', () => {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(err => {
-                    console.warn(`Could not enter full-screen mode automatically: ${err.message}`);
-                });
-            }
-        }, { once: true });
-
         // --- Keyboard Hotkeys for Player ---
         document.addEventListener('keydown', (event) => {
             // Only apply hotkeys when the video player is the active screen
-            // if (currentScreen !== 'player-screen') {
-            //     return;
-            // }
+            if (currentScreen !== 'player-screen') {
+                return;
+            }
 
             // Hotkey "Space" for play/pause toggle for local videos
             if (event.code === 'Space' && videoPlayer.style.display !== 'none') {
