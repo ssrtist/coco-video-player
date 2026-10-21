@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coco's Videos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .screen { display: none; }
+        .active-screen { display: block; }
+
+        /* Custom scrollbar for webkit browsers */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #2d3748;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4a5568;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #718096;
+        }
+
+        /* Custom progress bar style */
+        progress[value]::-webkit-progress-bar {
+            background-color: #4a5568;
+            border-radius: 0.5rem;
+        }
+        progress[value]::-webkit-progress-value {
+            background-color: #6366f1;
+            border-radius: 0.5rem;
+            transition: width 0.1s linear;
+        }
+        /* Increase progress bar height for better touch interaction */
+        #progress-bar {
+            height: 10px;
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: row;
+        }
+        .lyrics-panel {
+            width: 350px;
+            min-width: 200px;
+            max-width: 400px;
+            background: rgba(30, 41, 59, 0.95);
+            color: #fff;
+            padding: 1.5rem 1rem;
+            border-radius: 0.75rem;
+            margin-left: 1.5rem;
+            font-size: 1.1rem;
+            overflow-y: auto;
+            box-shadow: 0 0 16px 0 #0004;
+            white-space: pre-line;
+            display: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+        }
+        .video-container .video-controls {
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+        }
+        .video-container:hover .video-controls,
+        .video-container .video-controls.show-controls {
+            opacity: 1;
+        }
+        #progress-bubble {
+            transition: left 0.1s linear;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen">
+
+    <div class="container mx-auto p-4 max-w-4xl w-full">
+
+        <div id="main-menu" class="screen active-screen text-center">
+            <h1 class="text-5xl font-bold mb-8 text-indigo-400">Coco's Videos</h1>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <button onclick="showVideoList('andrew')" class="bg-yellow-700 hover:bg-yellow-600 text-white font-bold py-6 px-4 rounded-lg text-2xl transition-transform transform hover:scale-105">
+                    👨🏻‍💼 Andrew
+                </button>
+                <button onclick="showVideoList('singing')" class="bg-indigo-700 hover:bg-indigo-600 text-white font-bold py-6 px-4 rounded-lg text-2xl transition-transform transform hover:scale-105">
+                    🎤 Singing
+                </button>
+                <button onclick="showVideoList('dancing')" class="bg-teal-700 hover:bg-teal-600 text-white font-bold py-6 px-4 rounded-lg text-2xl transition-transform transform hover:scale-105">
+                    💃 Dancing
+                </button>
+                 <button onclick="showVideoList('youtube')" class="bg-red-700 hover:bg-red-600 text-white font-bold py-6 px-4 rounded-lg text-2xl transition-transform transform hover:scale-105">
+                    📺 YouTube
+                </button>
+                <button onclick="showRecordings()" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-6 px-4 rounded-lg text-2xl transition-transform transform hover:scale-105 col-span-1 md:col-span-3">
+                    🎧 Review Recordings
+                </button>
+            </div>
+        </div>
+
+        <div id="video-list" class="screen">
+            <button onclick="showScreen('main-menu')" class="absolute top-3 left-1 bg-red-700 hover:bg-red-400 text-white p-3 rounded-full z-10 m-4">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+            </button>
+            <div class="text-center mb-6 flex justify-center items-center relative">
+                <h2 id="video-list-title" class="text-3xl font-bold text-indigo-400 pt-4"></h2>
+                 <button id="add-youtube-btn" onclick="openAddVideoModal()" class="hidden absolute right-0 top-1/2 -translate-y-1/2 mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg">
+                    Add Video
+                </button>
+            </div>
+            <div id="video-items" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        </div>
+
+        <div id="player-screen" class="screen fixed inset-0 bg-black z-50">
+            <button onclick="goBackToSelection()" class="absolute top-7 left-5 bg-red-700 hover:bg-red-400 text-white p-3 rounded-full z-20">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+            </button>
+                        <div class="video-container">
+                                <div style="flex:1; min-width:0;">
+                                    <video id="video-player" class="w-full h-full object-contain" loop ontimeupdate="updateProgress()"></video>
+                                    <iframe id="youtube-player" class="w-full h-full" style="display: none;" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                                    <div id="video-controls" class="video-controls p-6">
+                    <div class="flex items-center gap-4 mb-2">
+                        <div id="progress-container" class="relative w-full flex items-center">
+                            <progress id="progress-bar" value="0" max="100" class="w-full h-2.5 rounded-lg cursor-pointer"></progress>
+                            <div id="progress-bubble" class="absolute w-4 h-4 bg-indigo-400 rounded-full pointer-events-none shadow-lg" style="left: 0%; transform: translateX(-50%); top: 50%; margin-top: -8px;"></div>
+                        </div>
+                        <span id="time-display" class="text-sm text-gray-300 whitespace-nowrap">0:00 / 0:00</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                         <div class="w-1/3">
+                            <button id="record-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="10" r="7"/></svg>
+                                Record
+                            </button>
+                        </div>
+                        <div class="w-1/3 flex justify-center items-center gap-4">
+                            <button onclick="playPrevious()" class="text-white p-3 rounded-full hover:bg-white/10">
+                                <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 20 20"><path d="M4 5h3v10H4V5zm12 0v10l-9-5 9-5z"/></svg>
+                            </button>
+                            <button id="play-pause-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full focus:outline-none transform transition-transform hover:scale-110">
+                                <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20"><path id="play-icon" d="M4.018 15.132l11.964-6.646-11.964-6.646v13.292z"></path><path id="pause-icon" style="display:none;" d="M6 5h2v10H6V5zm6 0h2v10h-2V5z"></path></svg>
+                            </button>
+                            <button onclick="playNext()" class="text-white p-3 rounded-full hover:bg-white/10">
+                                <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 20 20"><path d="M13 5h3v10h-3V5zM4 5l9 5-9 5V5z"/></svg>
+                            </button>
+                        </div>
+                        <div class="w-1/3 flex justify-end items-center gap-x-4">
+                            <div id="speed-controls" class="flex items-center gap-2">
+                                <button data-speed="0.5" class="speed-btn bg-gray-700 text-white font-bold py-2 px-3 rounded-lg text-sm">0.5x</button>
+                                <button data-speed="0.75" class="speed-btn bg-gray-700 text-white font-bold py-2 px-3 rounded-lg text-sm">0.75x</button>
+                                <button data-speed="1" class="speed-btn bg-indigo-600 text-white font-bold py-2 px-3 rounded-lg text-sm">1x</button>
+                           </div>
+                            <div>
+                                <label for="loop-options" class="sr-only">Loop Options</label>
+                                <select id="loop-options" class="bg-gray-700 text-white p-2 rounded-lg">
+                                    <option value="single">Loop This Video</option>
+                                    <option value="all-restart">Loop Playlist & Restart</option>
+                                    <option value="all-stop">Play Playlist & Stop</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                                    </div>
+                                </div>
+                                <div id="lyrics-panel" class="lyrics-panel"></div>
+            </div>
+        </div>
+
+        <div id="review-screen" class="screen relative">
+            <button onclick="showScreen('main-menu')" class="absolute top-0 left-0 bg-gray-800 bg-opacity-50 hover:bg-opacity-75 text-white p-3 rounded-full z-10 m-4">
+                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+            </button>
+            <div class="text-center mb-6">
+                <h2 class="text-3xl font-bold text-indigo-400 pt-4">Your Recordings</h2>
+            </div>
+            <div id="recording-list" class="space-y-4">
+                <p class="text-gray-400">No recordings found. Try recording some audio over a video!</p>
+            </div>
+        </div>
+        
+        <div id="review-player-screen" class="screen fixed inset-0 bg-black z-50">
+            <button onclick="stopReviewAndGoBack()" class="absolute top-4 left-4 bg-gray-800 bg-opacity-50 hover:bg-opacity-75 text-white p-3 rounded-full z-20">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+            </button>
+             <div class="video-container">
+                <video id="review-video-player" class="w-full h-full object-contain"></video>
+                <div class="video-controls show-controls p-6 flex justify-center items-center">
+                     <h3 id="review-title" class="text-xl font-bold"></h3>
+                </div>
+            </div>
+        </div>
+
+        <div id="add-video-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+            <div class="bg-gray-800 p-8 rounded-lg shadow-xl w-full max-w-md">
+                <h3 class="text-2xl font-bold mb-6 text-white">Add YouTube Video</h3>
+                <form id="add-video-form">
+                    <div class="mb-4">
+                        <label for="video-name" class="block text-gray-300 mb-2">Video Name</label>
+                        <input type="text" id="video-name" class="w-full bg-gray-700 text-white p-2 rounded-lg border border-gray-600 focus:outline-none focus:border-indigo-500" required>
+                    </div>
+                    <div class="mb-6">
+                        <label for="video-url" class="block text-gray-300 mb-2">YouTube URL</label>
+                        <input type="url" id="video-url" class="w-full bg-gray-700 text-white p-2 rounded-lg border border-gray-600 focus:outline-none focus:border-indigo-500" placeholder="https://www.youtube.com/watch?v=..." required>
+                    </div>
+                    <div class="flex justify-end gap-4">
+                        <button type="button" onclick="closeAddVideoModal()" class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg">Cancel</button>
+                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg">Save Video</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Lyrics Dictionary (from videos.conf) ---
+        const lyrics = {
+            "Brave": `Or be the backlash of somebody's lack of love\nOr you can start speaking up\nNothing's gonna hurt you the way that words do\nWhen they settle 'neath your skin\nKept on the inside and no sunlight\nSometimes a shadow wins\nBut I wonder what would happen if you\nSay what you wanna say\nAnd let the words fall out\nHonestly I wanna see you be brave\nWith what you want to say\nAnd let the words fall out\nHonestly I wanna see you be brave\nI just wanna see you\nI just wanna see you\nI just wanna see you\nI wanna see you be brave\n`,
+            "True Colors": `Can't remember when\nI last saw you laughing\nIf this world makes you crazy\nAnd you've taken all you can bear\nYou call me up\nBecause you know I'll be there\nAnd I'll see your true colors\nShining through\nI see your true colors\nAnd that's why I love you\nSo don't be afraid to let them show\nYour true colors\nYour true colors\nAre beautiful like a rainbow\n`,
+            "My Bonnie": `1, 2, 3, 4, 5\n... the sea\nMy Bonnie lies over the ocean\nOh bring back my Bonnie to me\nBring back, bring back\nOh bring back my Bonnie to me, to me\nBring back, bring back\nOh bring back my Bonnie to me\n`,
+            "Let It Be": `... to me\nSpeaking words of wisdom, let it be\nAnd in my hour of darkness she is standing right in front of me\nSpeaking words of wisdom, let it be\nLet it be, let it be, let it be, let it be\nWhisper words of wisdom, let it be\nAnd when the broken hearted people living in the world agree\nThere will be an answer, let it be\n`
+        };
+        let db;
+        const dbName = "multimediaAppDB";
+        const videoData = {
+            andrew: [
+                { name: "Brave", url: "videos/PXL_20250625_194342335.TS.mp4" },
+                { name: "True Colors", url: "videos/PXL_20250528_194505329.TS.mp4" },
+                { name: "My Bonnie", url: "videos/PXL_20250528_190856971.TS.mp4" },
+                { name: "Let It Be", url: "videos/PXL_20250514_193032889.TS.mp4" },
+            ],
+            singing: [
+                { name: "Lies Over The Ocean", url: "videos/My Bonnie Lies Over The Ocean_1080p.mp4" },
+                { name: "I Can See Clearly Now", url: "videos/I Can See Clearly Now_720p.mp4" },
+                { name: "Golden Girls", url: "videos/Golden Girls_720p.mp4" },
+            ],
+            dancing: [
+                { name: "Walking Exercise", url: "videos/Walking Exercise with the SUPER Coaches_720p.mp4" },
+                { name: "Classic 2 Mile", url: "videos/Classic 2 Mile Workout_720p.mp4" },
+                { name: "Zumba Mini-Workout 01", url: "videos/Zumba 30-Minute Mini-Workout_720p.mp4" },
+		{ name: "Coco Dance with Yooki", url: "videos/Coco Dance App 2 of 2 - Dance.mp4" },
+            ],
+            youtube: [
+                { name: "BEAUTIFUL BACK AND POSTURE", url: "https://www.youtube.com/embed/5mOpoYnXxpE?si=wTCg5rS7esbxotu1" },
+            ]
+        };
+
+        let currentScreen = 'main-menu';
+        let currentVideoList = [];
+        let currentVideoIndex = 0;
+        let mediaRecorder;
+        let audioChunks = [];
+        let isRecording = false;
+        let recordedAudioPlayer = null;
+
+        // --- App Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            loadYoutubeList();
+            const request = indexedDB.open(dbName, 1);
+            request.onerror = (event) => console.error("Database error:", event.target.errorCode);
+            request.onsuccess = (event) => {
+                db = event.target.result;
+                console.log("Database opened successfully.");
+            };
+            request.onupgradeneeded = (event) => {
+                let db = event.target.result;
+                let objectStore = db.createObjectStore("recordings", { keyPath: "id", autoIncrement: true });
+                objectStore.createIndex("videoName", "videoName", { unique: false });
+                objectStore.createIndex("videoSrc", "videoSrc", { unique: false });
+                objectStore.createIndex("audioBlob", "audioBlob", { unique: false });
+                objectStore.createIndex("timestamp", "timestamp", { unique: false });
+                console.log("Database setup complete.");
+            };
+            document.getElementById('add-video-form').addEventListener('submit', handleAddVideoSubmit);
+        });
+
+        // --- Screen Navigation ---
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active-screen');
+            });
+            document.getElementById(screenId).classList.add('active-screen');
+            currentScreen = screenId;
+        }
+
+        function showVideoList(category) {
+            currentVideoList = videoData[category];
+            const title = category.charAt(0).toUpperCase() + category.slice(1) + " Videos";
+            document.getElementById('video-list-title').innerText = title;
+
+            const addBtn = document.getElementById('add-youtube-btn');
+            if (category === 'youtube') {
+                addBtn.classList.remove('hidden');
+            } else {
+                addBtn.classList.add('hidden');
+            }
+
+            const videoItemsContainer = document.getElementById('video-items');
+            videoItemsContainer.innerHTML = '';
+            currentVideoList.forEach((video, index) => {
+                const button = document.createElement('button');
+                button.className = "bg-gray-800 hover:bg-gray-700 p-4 rounded-lg text-left transition-colors";
+                button.innerHTML = `<h3 class="font-bold text-lg">${video.name}</h3>`;
+                button.onclick = () => playVideo(index);
+                videoItemsContainer.appendChild(button);
+            });
+            showScreen('video-list');
+        }
+
+        // --- Video Player Logic ---
+        const videoPlayer = document.getElementById('video-player');
+        const youtubePlayer = document.getElementById('youtube-player');
+        const videoControls = document.getElementById('video-controls');
+        const speedControls = document.getElementById('speed-controls');
+        const speedButtons = speedControls.querySelectorAll('.speed-btn');
+
+        function playVideo(index) {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            }
+            currentVideoIndex = index;
+            const video = currentVideoList[currentVideoIndex];
+            const isYouTube = video.url.includes('youtube.com');
+            const lyricsPanel = document.getElementById('lyrics-panel');
+
+            // Show lyrics if available for this video
+            let lyricText = lyrics[video.name] || lyrics[video.name?.trim()] || '';
+            if (lyricText) {
+                lyricsPanel.textContent = '';
+                lyricsPanel.style.display = 'block';
+                lyricsPanel.innerText = lyricText;
+            } else {
+                lyricsPanel.textContent = '';
+                lyricsPanel.style.display = 'none';
+            }
+
+            if (isYouTube) {
+                videoPlayer.style.display = 'none';
+                videoControls.style.display = 'none';
+                youtubePlayer.src = video.url + "?autoplay=1&rel=0";
+                youtubePlayer.style.display = 'block';
+            } else {
+                youtubePlayer.style.display = 'none';
+                youtubePlayer.src = ""; // Stop YouTube video
+                videoPlayer.style.display = 'block';
+                videoControls.style.display = '';
+                videoPlayer.playbackRate = 1.0;
+                speedButtons.forEach(btn => {
+                    btn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+                    btn.classList.add('bg-gray-700');
+                    if (btn.dataset.speed === "1") {
+                        btn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+                        btn.classList.remove('bg-gray-700');
+                    }
+                });
+                videoPlayer.src = video.url;
+                videoPlayer.play();
+                updatePlayPauseIcon(false);
+            }
+            showScreen('player-screen');
+            document.getElementById('loop-options').value = 'single';
+        }
+        
+        function playNext() {
+            let nextIndex = currentVideoIndex + 1;
+            if (nextIndex >= currentVideoList.length) {
+                nextIndex = 0; // Loop to the start
+            }
+            playVideo(nextIndex);
+        }
+
+        function playPrevious() {
+            let prevIndex = currentVideoIndex - 1;
+            if (prevIndex < 0) {
+                prevIndex = currentVideoList.length - 1; // Loop to the end
+            }
+            playVideo(prevIndex);
+        }
+
+        function goBackToSelection() {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+            videoPlayer.pause();
+            videoPlayer.src = "";
+            youtubePlayer.src = "";
+            youtubePlayer.style.display = 'none';
+            videoPlayer.style.display = 'block';
+            if (isRecording) stopRecording();
+            showScreen('video-list');
+        }
+
+        const playPauseBtn = document.getElementById('play-pause-btn');
+        const playIcon = document.getElementById('play-icon');
+        const pauseIcon = document.getElementById('pause-icon');
+
+        function updatePlayPauseIcon(isPaused) {
+            playIcon.style.display = isPaused ? 'block' : 'none';
+            pauseIcon.style.display = isPaused ? 'none' : 'block';
+        }
+
+        playPauseBtn.addEventListener('click', () => {
+            if (videoPlayer.paused) {
+                videoPlayer.play();
+            } else {
+                videoPlayer.pause();
+            }
+        });
+        videoPlayer.addEventListener('play', () => updatePlayPauseIcon(false));
+        videoPlayer.addEventListener('pause', () => updatePlayPauseIcon(true));
+
+        // --- Playback Speed ---
+        speedControls.addEventListener('click', (e) => {
+            if (e.target.classList.contains('speed-btn')) {
+                const speed = parseFloat(e.target.dataset.speed);
+                videoPlayer.playbackRate = speed;
+                
+                speedButtons.forEach(btn => {
+                    btn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+                    btn.classList.add('bg-gray-700');
+                });
+                e.target.classList.remove('bg-gray-700');
+                e.target.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+            }
+        });
+
+        // --- Touch and Mouse Friendly Progress Bar & Time ---
+        const progressBar = document.getElementById('progress-bar');
+        const progressBarBubble = document.getElementById('progress-bubble');
+        const timeDisplay = document.getElementById('time-display');
+        let isDraggingProgress = false;
+
+        function updateProgress() {
+            if (isDraggingProgress) return;
+            const duration = videoPlayer.duration;
+            if (duration && isFinite(duration)) {
+                const progress = (videoPlayer.currentTime / duration) * 100;
+                progressBar.value = progress;
+                progressBarBubble.style.left = `${progress}%`;
+                
+                const formatTime = (time) => {
+                    const minutes = Math.floor(time / 60);
+                    const seconds = Math.floor(time % 60).toString().padStart(2, '0');
+                    return `${minutes}:${seconds}`;
+                }
+                timeDisplay.textContent = `${formatTime(videoPlayer.currentTime)} / ${formatTime(duration)}`;
+            } else {
+                progressBar.value = 0;
+                progressBarBubble.style.left = '0%';
+                timeDisplay.textContent = `0:00 / 0:00`;
+            }
+        }
+        
+        function scrub(e) {
+            const clientX = e.clientX ?? e.touches?.[0]?.clientX;
+            if (clientX === undefined) return;
+
+            const rect = progressBar.getBoundingClientRect();
+            const percent = Math.min(Math.max(0, clientX - rect.left), rect.width) / rect.width;
+            
+            if (videoPlayer.duration && isFinite(videoPlayer.duration)) {
+                const newTime = percent * videoPlayer.duration;
+                videoPlayer.currentTime = newTime;
+                progressBar.value = percent * 100;
+                progressBarBubble.style.left = `${percent * 100}%`;
+
+                const formatTime = (time) => {
+                    const minutes = Math.floor(time / 60);
+                    const seconds = Math.floor(time % 60).toString().padStart(2, '0');
+                    return `${minutes}:${seconds}`;
+                }
+                timeDisplay.textContent = `${formatTime(newTime)} / ${formatTime(videoPlayer.duration)}`;
+            }
+        }
+
+        function onScrubMove(e) {
+            if (isDraggingProgress) {
+                if (e.cancelable) e.preventDefault();
+                scrub(e);
+            }
+        }
+
+        function startScrubbing(e) {
+            isDraggingProgress = true;
+            scrub(e);
+        }
+
+        function stopScrubbing() {
+            isDraggingProgress = false;
+        }
+
+        const progressContainer = document.getElementById('progress-container');
+        progressContainer.addEventListener('mousedown', startScrubbing);
+        document.addEventListener('mousemove', onScrubMove);
+        document.addEventListener('mouseup', stopScrubbing);
+        document.addEventListener('mouseleave', stopScrubbing);
+
+        progressContainer.addEventListener('touchstart', startScrubbing, { passive: true });
+        document.addEventListener('touchmove', onScrubMove, { passive: false });
+        document.addEventListener('touchend', stopScrubbing);
+
+
+        // --- Loop Logic ---
+        document.getElementById('loop-options').addEventListener('change', (e) => {
+            videoPlayer.loop = e.target.value === 'single';
+        });
+
+        videoPlayer.addEventListener('ended', () => {
+            const loopOption = document.getElementById('loop-options').value;
+             if (videoPlayer.loop) return;
+            
+            const isLastVideo = currentVideoIndex === currentVideoList.length - 1;
+
+            if (loopOption === 'all-restart') {
+                playNext();
+            } else if (loopOption === 'all-stop') {
+                if (!isLastVideo) {
+                    playNext();
+                } else {
+                    goBackToSelection();
+                }
+            }
+        });
+
+        // --- Add YouTube Video Logic ---
+        const addVideoModal = document.getElementById('add-video-modal');
+        function openAddVideoModal() {
+            addVideoModal.classList.remove('hidden');
+        }
+        function closeAddVideoModal() {
+            addVideoModal.classList.add('hidden');
+            document.getElementById('add-video-form').reset();
+        }
+
+        function handleAddVideoSubmit(event) {
+            event.preventDefault();
+            const videoName = document.getElementById('video-name').value;
+            const videoUrl = document.getElementById('video-url').value;
+
+            const videoId = extractYouTubeID(videoUrl);
+            if (!videoId) {
+                alert("Invalid YouTube URL. Please use a valid 'watch' or 'youtu.be' link.");
+                return;
+            }
+
+            const newVideo = {
+                name: videoName,
+                url: `https://www.youtube.com/embed/${videoId}`
+            };
+
+            videoData.youtube.push(newVideo);
+            saveYoutubeList();
+            showVideoList('youtube');
+            closeAddVideoModal();
+        }
+
+        function extractYouTubeID(url) {
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
+        }
+
+        function saveYoutubeList() {
+            localStorage.setItem('customYoutubeVideos', JSON.stringify(videoData.youtube));
+        }
+
+        function loadYoutubeList() {
+            const savedVideos = localStorage.getItem('customYoutubeVideos');
+            if (savedVideos) {
+                videoData.youtube = JSON.parse(savedVideos);
+            }
+        }
+
+        // --- Audio Recording Logic ---
+        const recordBtn = document.getElementById('record-btn');
+        recordBtn.addEventListener('click', () => {
+            if (!isRecording) startRecording();
+            else stopRecording();
+        });
+
+        async function startRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                isRecording = true;
+                audioChunks = [];
+                mediaRecorder = new MediaRecorder(stream);
+                mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
+                mediaRecorder.onstop = saveRecording;
+                mediaRecorder.start();
+                
+                recordBtn.classList.replace('bg-red-600', 'bg-yellow-500');
+                recordBtn.classList.replace('hover:bg-red-700', 'hover:bg-yellow-600');
+                recordBtn.innerHTML = `<svg class="w-5 h-5 animate-pulse" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="10" r="7"/></svg>Stop`;
+            } catch (err) {
+                console.error("Error accessing microphone:", err);
+                alert("Could not access microphone. Please check permissions.");
+            }
+        }
+
+        function stopRecording() {
+            if (mediaRecorder) {
+                mediaRecorder.stop();
+                isRecording = false;
+                recordBtn.classList.replace('bg-yellow-500', 'bg-red-600');
+                recordBtn.classList.replace('hover:bg-yellow-600', 'hover:bg-red-700');
+                recordBtn.innerHTML = `<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="10" r="7"/></svg>Record`;
+            }
+        }
+
+        function saveRecording() {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            const video = currentVideoList[currentVideoIndex];
+            const recordingData = {
+                videoName: video.name,
+                videoSrc: video.url,
+                audioBlob: audioBlob,
+                timestamp: new Date()
+            };
+
+            const transaction = db.transaction(["recordings"], "readwrite");
+            const objectStore = transaction.objectStore("recordings");
+            const request = objectStore.add(recordingData);
+
+            request.onsuccess = () => {
+                console.log("Recording saved to DB.");
+                alert('Recording saved!');
+            };
+            request.onerror = (event) => console.error("Error saving recording:", event.target.errorCode);
+        }
+
+        // --- Review Recordings Logic ---
+        function showRecordings() {
+            if (!db) {
+                alert("Database not ready yet. Please wait a moment.");
+                return;
+            }
+            const transaction = db.transaction(["recordings"], "readonly");
+            const objectStore = transaction.objectStore("recordings");
+            const recordings = [];
+            
+            objectStore.openCursor().onsuccess = (event) => {
+                const cursor = event.target.result;
+                if (cursor) {
+                    recordings.push(cursor.value);
+                    cursor.continue();
+                } else {
+                    displayRecordings(recordings);
+                }
+            };
+            showScreen('review-screen');
+        }
+
+        function displayRecordings(recordings) {
+            const listContainer = document.getElementById('recording-list');
+            listContainer.innerHTML = '';
+
+            if (recordings.length === 0) {
+                 listContainer.innerHTML = `<p class="text-gray-400">No recordings found. Try recording some audio over a video!</p>`;
+                 return;
+            }
+
+            recordings.sort((a, b) => b.timestamp - a.timestamp);
+
+            recordings.forEach(rec => {
+                const div = document.createElement('div');
+                div.className = 'bg-gray-800 p-4 rounded-lg flex justify-between items-center';
+                div.innerHTML = `
+                    <div>
+                        <h4 class="font-bold text-xl">${rec.videoName}</h4>
+                        <p class="text-sm text-gray-400">Recorded on: ${rec.timestamp.toLocaleString()}</p>
+                    </div>
+                    <div class="flex gap-4">
+                        <button class="play-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg">Play Sync</button>
+                        <button class="delete-btn bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">Delete</button>
+                    </div>
+                `;
+                div.querySelector('.play-btn').onclick = () => playRecording(rec);
+                div.querySelector('.delete-btn').onclick = () => deleteRecording(rec.id);
+                listContainer.appendChild(div);
+            });
+        }
+        
+        function deleteRecording(id) {
+            if (!db) {
+                alert("Database not ready.");
+                return;
+            }
+            const transaction = db.transaction(["recordings"], "readwrite");
+            const objectStore = transaction.objectStore("recordings");
+            const request = objectStore.delete(id);
+
+            request.onsuccess = () => {
+                console.log(`Recording ${id} deleted.`);
+                showRecordings(); // Refresh the list after deletion
+            };
+
+            request.onerror = (event) => {
+                console.error("Error deleting recording:", event.target.errorCode);
+                alert('Could not delete the recording.');
+            };
+        }
+        
+        function playRecording(recording) {
+            const reviewPlayer = document.getElementById('review-video-player');
+            document.getElementById('review-title').innerText = `Review: ${recording.videoName}`;
+            
+            reviewPlayer.src = recording.videoSrc;
+            
+            const audioURL = URL.createObjectURL(recording.audioBlob);
+            recordedAudioPlayer = new Audio(audioURL);
+
+            let playPromises = [reviewPlayer.play(), recordedAudioPlayer.play()];
+
+            Promise.all(playPromises).catch(error => {
+                console.error("Playback failed", error);
+            });
+            
+            showScreen('review-player-screen');
+        }
+        
+        function stopReviewAndGoBack() {
+             const reviewPlayer = document.getElementById('review-video-player');
+             reviewPlayer.pause();
+             reviewPlayer.src = "";
+             if (recordedAudioPlayer) {
+                 recordedAudioPlayer.pause();
+                 recordedAudioPlayer = null;
+             }
+             showRecordings();
+        }
+        
+        // --- Keyboard Hotkeys for Player ---
+        document.addEventListener('keydown', (event) => {
+            // Only apply hotkeys when the video player is the active screen
+            if (currentScreen !== 'player-screen') {
+                return;
+            }
+
+            // Hotkey "Space" for play/pause toggle for local videos
+            if (event.code === 'Space' && videoPlayer.style.display !== 'none') {
+                event.preventDefault(); // Prevent default browser action (e.g., scrolling)
+                playPauseBtn.click(); // Trigger a click on the main play/pause button
+            }
+
+            // Hotkey "F" for full screen toggle
+            if (event.key.toLowerCase() === 'f') {
+                event.preventDefault();
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen();
+                } else if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        });
+
+    </script>
+</body>
+</html>
