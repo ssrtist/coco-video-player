@@ -119,11 +119,17 @@
             <button onclick="showScreen('main-menu')" class="absolute top-3 left-1 bg-red-700 hover:bg-red-400 text-white p-3 rounded-full z-10 m-4">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
             </button>
-            <div class="text-center mb-6 flex justify-center items-center relative">
-                <h2 id="video-list-title" class="text-3xl font-bold text-indigo-400 pt-4"></h2>
-                 <button id="add-youtube-btn" onclick="openAddVideoModal()" class="hidden absolute right-0 top-1/2 -translate-y-1/2 mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg">
-                    Add Video
-                </button>
+            <div class="text-center mb-6 flex flex-col sm:flex-row justify-center items-center relative gap-2 pt-4">
+                <h2 id="video-list-title" class="text-3xl font-bold text-indigo-400"></h2>
+                <div class="flex items-center gap-2 mt-2 sm:mt-0 sm:absolute sm:right-0">
+                    <button id="precache-all-btn" onclick="cacheAllCategoryVideos()" class="bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-semibold py-2 px-3 rounded-lg flex items-center gap-1 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                        <span>Cache Category</span>
+                    </button>
+                    <button id="add-youtube-btn" onclick="openAddVideoModal()" class="hidden bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg">
+                        Add Video
+                    </button>
+                </div>
             </div>
             <div id="video-items" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
         </div>
@@ -271,8 +277,170 @@
         let isRecording = false;
         let recordedAudioPlayer = null;
 
+        // --- Service Worker & Cache Management ---
+        let swRegistration = null;
+        let cachedUrlsSet = new Set();
+        let currentCategory = '';
+
+        async function initServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                try {
+                    swRegistration = await navigator.serviceWorker.register('sw.js');
+                    console.log('Service Worker registered successfully:', swRegistration.scope);
+
+                    // Request persistent storage protection so browser doesn't evict videos
+                    if (navigator.storage && navigator.storage.persist) {
+                        const isPersisted = await navigator.storage.persist();
+                        console.log('Persistent storage granted:', isPersisted);
+                    }
+
+                    navigator.serviceWorker.addEventListener('message', (event) => {
+                        const msg = event.data;
+                        if (!msg) return;
+                        if (msg.type === 'VIDEO_CACHED') {
+                            cachedUrlsSet.add(msg.url);
+                            updateVideoItemCacheBadges();
+                        } else if (msg.type === 'VIDEO_REMOVED') {
+                            cachedUrlsSet.delete(msg.url);
+                            updateVideoItemCacheBadges();
+                        } else if (msg.type === 'CACHE_STATUS_RESULT') {
+                            for (const [url, isCached] of Object.entries(msg.statusMap || {})) {
+                                if (isCached) cachedUrlsSet.add(url);
+                                else cachedUrlsSet.delete(url);
+                            }
+                            updateVideoItemCacheBadges();
+                        } else if (msg.type === 'ALL_CACHES_CLEARED') {
+                            cachedUrlsSet.clear();
+                            updateVideoItemCacheBadges();
+                        }
+                    });
+
+                    // Query cache status for all known videos
+                    refreshCacheStatus();
+                } catch (err) {
+                    console.warn('Service Worker registration failed:', err);
+                }
+            }
+        }
+
+        function refreshCacheStatus() {
+            const allUrls = [];
+            ['andrew', 'singing', 'dancing'].forEach(cat => {
+                (videoData[cat] || []).forEach(v => {
+                    if (v.url && !v.url.includes('youtube.com')) {
+                        allUrls.push(v.url);
+                    }
+                });
+            });
+
+            if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                navigator.serviceWorker.controller.postMessage({
+                    action: 'CHECK_CACHE_STATUS',
+                    urls: allUrls
+                });
+            } else if ('caches' in window) {
+                // Direct fallback query if SW controller not claimed yet
+                caches.open('coco-dance-videos-v1').then(async (cache) => {
+                    for (const url of allUrls) {
+                        const match = await cache.match(url);
+                        if (match) cachedUrlsSet.add(url);
+                    }
+                    updateVideoItemCacheBadges();
+                });
+            }
+        }
+
+        function precacheVideo(url, btnElement) {
+            if (!url) return;
+            if (btnElement) {
+                btnElement.disabled = true;
+                btnElement.innerHTML = `<span class="inline-block animate-spin mr-1">⏳</span> Caching...`;
+            }
+            if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                navigator.serviceWorker.controller.postMessage({
+                    action: 'PRECACHE_VIDEO',
+                    url: url
+                });
+            } else if ('caches' in window) {
+                fetch(url, { mode: 'cors' }).then(res => {
+                    if (res.status === 200) {
+                        return caches.open('coco-dance-videos-v1').then(cache => cache.put(url, res));
+                    }
+                }).then(() => {
+                    cachedUrlsSet.add(url);
+                    updateVideoItemCacheBadges();
+                }).catch(err => {
+                    console.error('Failed to precache:', err);
+                    if (btnElement) {
+                        btnElement.disabled = false;
+                        btnElement.innerHTML = `Save Offline`;
+                    }
+                });
+            }
+        }
+
+        async function cacheAllCategoryVideos() {
+            if (!currentVideoList || currentVideoList.length === 0) return;
+            const btn = document.getElementById('precache-all-btn');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = `<span class="inline-block animate-spin mr-1">⏳</span> Caching Category...`;
+            }
+
+            for (const video of currentVideoList) {
+                if (video.url && !video.url.includes('youtube.com') && !cachedUrlsSet.has(video.url)) {
+                    precacheVideo(video.url);
+                }
+            }
+
+            setTimeout(() => {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = `
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                        <span>Cache Category</span>
+                    `;
+                }
+            }, 3000);
+        }
+
+        function updateVideoItemCacheBadges() {
+            document.querySelectorAll('.video-card-item').forEach(card => {
+                const url = card.dataset.url;
+                const badge = card.querySelector('.cache-status-badge');
+                const downloadBtn = card.querySelector('.download-cache-btn');
+                if (!badge || !url) return;
+
+                if (url.includes('youtube.com')) {
+                    badge.classList.add('hidden');
+                    if (downloadBtn) downloadBtn.classList.add('hidden');
+                    return;
+                }
+
+                if (cachedUrlsSet.has(url)) {
+                    badge.className = 'cache-status-badge text-xs px-2 py-0.5 rounded font-semibold bg-emerald-950/80 text-emerald-400 border border-emerald-700/50 flex items-center gap-1';
+                    badge.innerHTML = `<span>✓</span><span>Saved Offline</span>`;
+                    badge.classList.remove('hidden');
+                    if (downloadBtn) downloadBtn.classList.add('hidden');
+                } else {
+                    badge.className = 'cache-status-badge text-xs px-2 py-0.5 rounded font-semibold bg-gray-800 text-gray-400 border border-gray-700 flex items-center gap-1';
+                    badge.innerHTML = `<span>☁</span><span>Streams from Edge</span>`;
+                    badge.classList.remove('hidden');
+                    if (downloadBtn) {
+                        downloadBtn.classList.remove('hidden');
+                        downloadBtn.disabled = false;
+                        downloadBtn.innerHTML = `
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                            <span>Save</span>
+                        `;
+                    }
+                }
+            });
+        }
+
         // --- App Initialization ---
         document.addEventListener('DOMContentLoaded', () => {
+            initServiceWorker();
             loadYoutubeList();
             const request = indexedDB.open(dbName, 1);
             request.onerror = (event) => console.error("Database error:", event.target.errorCode);
@@ -302,27 +470,54 @@
         }
 
         function showVideoList(category) {
+            currentCategory = category;
             currentVideoList = videoData[category];
             const title = category.charAt(0).toUpperCase() + category.slice(1) + " Videos";
             document.getElementById('video-list-title').innerText = title;
 
             const addBtn = document.getElementById('add-youtube-btn');
+            const precacheAllBtn = document.getElementById('precache-all-btn');
             if (category === 'youtube') {
                 addBtn.classList.remove('hidden');
+                precacheAllBtn.classList.add('hidden');
             } else {
                 addBtn.classList.add('hidden');
+                precacheAllBtn.classList.remove('hidden');
             }
 
             const videoItemsContainer = document.getElementById('video-items');
             videoItemsContainer.innerHTML = '';
             currentVideoList.forEach((video, index) => {
-                const button = document.createElement('button');
-                button.className = "bg-gray-800 hover:bg-gray-700 p-4 rounded-lg text-left transition-colors";
-                button.innerHTML = `<h3 class="font-bold text-lg">${video.name}</h3>`;
-                button.onclick = () => playVideo(index);
-                videoItemsContainer.appendChild(button);
+                const card = document.createElement('div');
+                card.className = "video-card-item bg-gray-800 hover:bg-gray-750 border border-gray-700/60 p-4 rounded-xl flex flex-col justify-between transition-all hover:border-indigo-500/50 hover:shadow-lg";
+                card.dataset.url = video.url;
+
+                const isYouTube = video.url.includes('youtube.com');
+                const isCached = cachedUrlsSet.has(video.url);
+
+                card.innerHTML = `
+                    <div class="cursor-pointer mb-3" onclick="playVideo(${index})">
+                        <div class="flex items-start justify-between gap-2">
+                            <h3 class="font-bold text-lg text-white hover:text-indigo-400 transition-colors">${video.name}</h3>
+                            <span class="text-xs text-indigo-400 font-mono mt-1 opacity-75">▶ Play</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between pt-2 border-t border-gray-700/50 text-xs">
+                        <div class="cache-status-badge ${isYouTube ? 'hidden' : ''} ${isCached ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-700/50' : 'bg-gray-800 text-gray-400 border border-gray-700'} px-2 py-0.5 rounded font-semibold flex items-center gap-1">
+                            ${isCached ? '<span>✓</span><span>Saved Offline</span>' : '<span>☁</span><span>Streams from Edge</span>'}
+                        </div>
+                        ${!isYouTube && !isCached ? `
+                            <button class="download-cache-btn bg-gray-700 hover:bg-indigo-600 text-gray-200 hover:text-white px-2.5 py-1 rounded-lg text-xs font-medium flex items-center gap-1 transition-colors" onclick="event.stopPropagation(); precacheVideo('${video.url}', this)">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                <span>Save</span>
+                            </button>
+                        ` : ''}
+                    </div>
+                `;
+                videoItemsContainer.appendChild(card);
             });
             showScreen('video-list');
+            refreshCacheStatus();
         }
 
         // --- Video Player Logic ---

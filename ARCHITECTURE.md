@@ -65,7 +65,8 @@ flowchart TD
 | **DNS Record** | `cname.vercel-dns.com` | `CNAME`, `proxied: true` | Routes traffic through Cloudflare Edge Anycast IPs |
 | **Zero Trust App** | `Coco Dance` | Self-Hosted Application | Edge authentication interception before Vercel or media load |
 | **Access Policy** | `Family Access` | `Action: Allow`, `Selector: Emails` | Email allowlist validation (`ssrtist@gmail.com`, etc.) |
-| **Frontend Host** | Vercel (`coco-dance-app`) | Static Edge Deployment | Serves HTML5 interface, lyrics synchronization, IndexedDB recorder |
+| **Frontend Host** | Vercel (`coco-dance-app`) | Static Edge Deployment | Serves HTML5 interface, lyrics synchronization, IndexedDB recorder, Service Worker cache |
+| **Client Caching** | Service Worker (`sw.js`) | Cache Storage API (`coco-dance-videos-v1`) | Slices Range requests (HTTP 206) from local cache for 0 KB repeat plays |
 | **Video Storage** | Cloudflare R2 (`coco-dance-videos`) | `Standard`, `ENAM` | High-throughput byte-range video streaming with $0 egress fees |
 | **Local Fallback** | `http://192.168.3.5:30040/dance/` | Apache / TrueNAS SCALE | Subnet-fenced local server for offline/LAN use |
 
