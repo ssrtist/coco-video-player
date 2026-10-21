@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coco Dance - System Architecture & Network Diagram</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f1f5f9;
+            --text-dim: #94a3b8;
+            --accent: #38bdf8;
+            --accent-green: #34d399;
+            --border: #334155;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 2rem;
+            line-height: 1.6;
+        }
+        .header {
+            max-width: 1200px;
+            margin: 0 auto 2rem auto;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .header h1 {
+            font-size: 1.8rem;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .badge {
+            background: #0284c7;
+            color: #fff;
+            font-size: 0.8rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 9999px;
+            font-weight: 600;
+        }
+        .badge-green {
+            background: #059669;
+        }
+        .card {
+            max-width: 1200px;
+            margin: 0 auto 2rem auto;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+        .card-title {
+            font-size: 1.25rem;
+            color: var(--accent);
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+        .mermaid {
+            background: #0b1120;
+            border-radius: 8px;
+            padding: 1rem;
+            overflow-x: auto;
+            display: flex;
+            justify-content: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            font-size: 0.95rem;
+        }
+        th, td {
+            text-align: left;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+        th {
+            background-color: rgba(255, 255, 255, 0.03);
+            color: var(--text-dim);
+            font-weight: 600;
+        }
+        tr:hover {
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+        .code-pill {
+            background: #0f172a;
+            border: 1px solid var(--border);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: #f472b6;
+        }
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #4ade80;
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #4ade80;
+            box-shadow: 0 0 8px #4ade80;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>
+            <span>Coco Sing &amp; Dance Infrastructure</span>
+            <span class="badge badge-green">Production</span>
+            <span class="badge">Zero Trust Protected</span>
+        </h1>
+        <div class="status-pill">
+            <span class="status-dot"></span>
+            <span>https://dance.cocogames.org</span>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2 class="card-title">1. Global End-to-End Topology &amp; Zero Trust Gate</h2>
+        <div class="mermaid">
+flowchart TD
+    subgraph Clients["Authorized Family Devices"]
+        Desktop["Desktop Browsers (Chrome / Edge / Firefox)"]
+        Mobile["Mobile & Tablet Devices (iOS / Android)"]
+    end
+
+    subgraph Cloudflare_Edge["Cloudflare Edge Tier (cocogames.org)"]
+        CF_DNS["Cloudflare DNS\ndance.cocogames.org\n(CNAME -> cname.vercel-dns.com, Proxied: true)"]
+        CF_Access["Cloudflare Zero Trust Access Gatekeeper\n- App: 'Coco Dance'\n- Default-Deny Security Model\n- Session Cookie: CF_Authorization"]
+        CF_Policy["Access Policy: Family Access\n- Rule: Action = Allow\n- Selector: Emails = [ssrtist@gmail.com, ...]"]
+    end
+
+    subgraph Auth_Tier["Identity & Authentication Providers"]
+        Google_OAuth["Google Cloud OAuth 2.0 / IdP\n- Client ID & Secret Verification\n- One-Time PIN Fallback (Email OTP)"]
+    end
+
+    subgraph Frontend_Tier["Frontend Edge Tier (Vercel)"]
+        Vercel_SSL["Automated Let's Encrypt TLS / SSL"]
+        Vercel_Project["Vercel Project: coco-dance-app\n- Entry Point: index.html\n- UI: TailwindCSS / HTML5 / JS\n- IndexedDB Audio Recording Engine\n- .vercelignore: Excludes heavy video files"]
+    end
+
+    subgraph Storage_Tier["Object Storage & Media Streaming (Cloudflare R2)"]
+        R2_Bucket["R2 Bucket: 'coco-dance-videos'\n- Region: ENAM\n- Unlimited Free Egress ($0 Bandwidth Fees)"]
+        R2_Endpoint["Public Streaming CDN Endpoint:\npub-18aec1f30ae442ebbfbee0cf65c7fc41.r2.dev"]
+        R2_Media["11 MP4 Video Files (~818 MB Total)\n- Zumba 30-Min (194 MB)\n- Classic 2-Mile (182 MB)\n- Super Coaches Walk (119 MB)\n- Coco Dance with Yooki (84 MB)\n- Personal TS Clips & Sing-Alongs"]
+    end
+
+    subgraph Local_Homelab["Local Homelab Fallback Tier"]
+        TrueNAS_SCALE["TrueNAS SCALE Server (192.168.3.5:30040)\n- Path: /dance/ on WordPress Container\n- Subnet Restricted (.htaccess: 192.168.3.0/24)"]
+    end
+
+    %% Network flows
+    Clients -->|1. Request https://dance.cocogames.org| CF_DNS
+    CF_DNS -->|2. Intercept at Edge| CF_Access
+    CF_Access <-->|3. Challenge & Verify Identity| Google_OAuth
+    CF_Access -->|4. If Authorized: Pass to Destination| Frontend_Tier
+    Frontend_Tier --> Vercel_Project
+
+    %% Media fetching
+    Vercel_Project -->|5. Load HTML/CSS/JS UI| Clients
+    Clients -->|6. Stream Video Payloads via HTTP Range Requests| R2_Endpoint
+    R2_Endpoint --> R2_Bucket
+    R2_Bucket --> R2_Media
+
+    %% Fallback
+    Clients -.->|Local Subnet Fallback Only| TrueNAS_SCALE
+        </div>
+    </div>
+
+    <div class="card">
+        <h2 class="card-title">2. Edge Ingress &amp; Security Specifications</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Component</th>
+                    <th>Target / Value</th>
+                    <th>Mode / Protocol</th>
+                    <th>Security &amp; Function</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Public FQDN</strong></td>
+                    <td><span class="code-pill">dance.cocogames.org</span></td>
+                    <td>HTTPS (TLS 1.3 / H3)</td>
+                    <td>Canonical access entrypoint</td>
+                </tr>
+                <tr>
+                    <td><strong>DNS Record</strong></td>
+                    <td><span class="code-pill">cname.vercel-dns.com</span></td>
+                    <td>CNAME (proxied: true)</td>
+                    <td>Cloudflare Anycast edge proxying</td>
+                </tr>
+                <tr>
+                    <td><strong>Zero Trust Gate</strong></td>
+                    <td><span class="code-pill">Coco Dance</span></td>
+                    <td>Self-Hosted App</td>
+                    <td>Intercepts traffic; enforces OAuth session</td>
+                </tr>
+                <tr>
+                    <td><strong>Access Policy</strong></td>
+                    <td><span class="code-pill">Family Access</span></td>
+                    <td>Allow (Email Whitelist)</td>
+                    <td>Authorized Google emails only</td>
+                </tr>
+                <tr>
+                    <td><strong>Frontend App</strong></td>
+                    <td><span class="code-pill">coco-dance-app</span></td>
+                    <td>Vercel Edge CDN</td>
+                    <td>Pure HTML5 / TailwindCSS / IndexedDB</td>
+                </tr>
+                <tr>
+                    <td><strong>Video Storage</strong></td>
+                    <td><span class="code-pill">coco-dance-videos</span></td>
+                    <td>Cloudflare R2 (ENAM)</td>
+                    <td>Byte-range MP4 streaming ($0 egress)</td>
+                </tr>
+                <tr>
+                    <td><strong>Homelab Fallback</strong></td>
+                    <td><span class="code-pill">192.168.3.5:30040</span></td>
+                    <td>TrueNAS WordPress</td>
+                    <td>Subnet restricted (<span class="code-pill">192.168.3.0/24</span>)</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h2 class="card-title">3. Cloudflare R2 Hosted Media Assets (11 Files, ~818 MB)</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>R2 Object Key</th>
+                    <th>Size</th>
+                    <th>Resolution</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Zumba 30-Minute Mini-Workout</td>
+                    <td><span class="code-pill">Zumba 30-Minute Mini-Workout_720p.mp4</span></td>
+                    <td>194.01 MB</td>
+                    <td>720p</td>
+                </tr>
+                <tr>
+                    <td>Classic 2 Mile Workout</td>
+                    <td><span class="code-pill">Classic 2 Mile Workout_720p.mp4</span></td>
+                    <td>181.77 MB</td>
+                    <td>720p</td>
+                </tr>
+                <tr>
+                    <td>Walking Exercise with SUPER Coaches</td>
+                    <td><span class="code-pill">Walking Exercise with the SUPER Coaches_720p.mp4</span></td>
+                    <td>119.44 MB</td>
+                    <td>720p</td>
+                </tr>
+                <tr>
+                    <td>Coco Dance with Yooki</td>
+                    <td><span class="code-pill">Coco Dance App 2 of 2 - Dance.mp4</span></td>
+                    <td>84.26 MB</td>
+                    <td>1080p</td>
+                </tr>
+                <tr>
+                    <td>Let It Be (Personal Clip)</td>
+                    <td><span class="code-pill">PXL_20250514_193032889.TS.mp4</span></td>
+                    <td>51.96 MB</td>
+                    <td>1080p</td>
+                </tr>
+                <tr>
+                    <td>My Bonnie (Personal Clip)</td>
+                    <td><span class="code-pill">PXL_20250528_190856971.TS.mp4</span></td>
+                    <td>42.69 MB</td>
+                    <td>1080p</td>
+                </tr>
+                <tr>
+                    <td>Brave (Personal Clip)</td>
+                    <td><span class="code-pill">PXL_20250625_194342335.TS.mp4</span></td>
+                    <td>40.19 MB</td>
+                    <td>1080p</td>
+                </tr>
+                <tr>
+                    <td>True Colors (Personal Clip)</td>
+                    <td><span class="code-pill">PXL_20250528_194505329.TS.mp4</span></td>
+                    <td>38.82 MB</td>
+                    <td>1080p</td>
+                </tr>
+                <tr>
+                    <td>I Can See Clearly Now</td>
+                    <td><span class="code-pill">I Can See Clearly Now_720p.mp4</span></td>
+                    <td>31.85 MB</td>
+                    <td>720p</td>
+                </tr>
+                <tr>
+                    <td>My Bonnie Lies Over The Ocean</td>
+                    <td><span class="code-pill">My Bonnie Lies Over The Ocean_1080p.mp4</span></td>
+                    <td>25.87 MB</td>
+                    <td>1080p</td>
+                </tr>
+                <tr>
+                    <td>Golden Girls Theme</td>
+                    <td><span class="code-pill">Golden Girls_720p.mp4</span></td>
+                    <td>7.56 MB</td>
+                    <td>720p</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+    </script>
+</body>
+</html>
