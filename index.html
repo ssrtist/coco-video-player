@@ -174,7 +174,7 @@
             </button>
                         <div class="video-container">
                                 <div style="flex:1; min-width:0;">
-                                    <video id="video-player" class="w-full h-full object-contain" loop ontimeupdate="updateProgress()"></video>
+                                    <video id="video-player" class="w-full h-full object-contain" playsinline webkit-playsinline loop ontimeupdate="updateProgress()"></video>
                                     <iframe id="youtube-player" class="w-full h-full" style="display: none;" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
                                     <div id="video-controls" class="video-controls p-6">
                     <div class="flex items-center gap-4 mb-2">
